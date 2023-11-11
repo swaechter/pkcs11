@@ -5,8 +5,7 @@ import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.VarHandle;
 
-import static java.lang.foreign.ValueLayout.JAVA_BYTE;
-import static java.lang.foreign.ValueLayout.JAVA_LONG;
+import static java.lang.foreign.ValueLayout.*;
 
 /**
  * Template that represents a Linux system with 8 byte aligned struct layouts, mostly Linux x64. Long takes 8 bytes.
@@ -49,5 +48,46 @@ public class AlignedLinuxTemplate extends Template {
             getCkVersionLayout().withName("libraryVersion"),
             MemoryLayout.paddingLayout(2)
         ).withName("CK_INFO");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected GroupLayout buildCkSlotInfoLayout() {
+        return MemoryLayout.structLayout(
+            MemoryLayout.sequenceLayout(64, JAVA_BYTE).withName("slotDescription"),
+            MemoryLayout.sequenceLayout(32, JAVA_BYTE).withName("manufacturerID"),
+            JAVA_LONG.withName("flags"),
+            getCkVersionLayout().withName("hardwareVersion"),
+            getCkVersionLayout().withName("firmwareVersion")
+        ).withName("CK_SLOT_INFO");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected GroupLayout buildCkTokenInfoLayout() {
+        return MemoryLayout.structLayout(
+            MemoryLayout.sequenceLayout(32, JAVA_BYTE).withName("label"),
+            MemoryLayout.sequenceLayout(32, JAVA_BYTE).withName("manufacturerID"),
+            MemoryLayout.sequenceLayout(16, JAVA_BYTE).withName("model"),
+            MemoryLayout.sequenceLayout(16, JAVA_BYTE).withName("serialNumber"),
+            JAVA_INT.withName("flags"),
+            JAVA_INT.withName("maxSessionCount"),
+            JAVA_INT.withName("sessionCount"),
+            JAVA_INT.withName("maxRwSessionCount"),
+            JAVA_INT.withName("rwSessionCount"),
+            JAVA_INT.withName("maxPinLen"),
+            JAVA_INT.withName("minPinLen"),
+            JAVA_INT.withName("totalPublicMemory"),
+            JAVA_INT.withName("freePublicMemory"),
+            JAVA_INT.withName("totalPrivateMemory"),
+            JAVA_INT.withName("freePrivateMemory"),
+            getCkVersionLayout().withName("hardwareVersion"),
+            getCkVersionLayout().withName("firmwareVersion"),
+            MemoryLayout.sequenceLayout(16, JAVA_BYTE).withName("utcTime")
+        ).withName("CK_TOKEN_INFO");
     }
 }

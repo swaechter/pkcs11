@@ -48,4 +48,45 @@ public class PackedWindowsTemplate extends Template {
             getCkVersionLayout().withName("libraryVersion")
         ).withName("CK_INFO");
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected GroupLayout buildCkSlotInfoLayout() {
+        return MemoryLayout.structLayout(
+            MemoryLayout.sequenceLayout(64, JAVA_BYTE).withName("slotDescription"),
+            MemoryLayout.sequenceLayout(32, JAVA_BYTE).withName("manufacturerId"),
+            JAVA_INT_UNALIGNED.withName("flags"),
+            getCkVersionLayout().withName("hardwareVersion"),
+            getCkVersionLayout().withName("firmwareVersion")
+        ).withName("CK_SLOT_INFO");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected GroupLayout buildCkTokenInfoLayout() {
+        return MemoryLayout.structLayout(
+            MemoryLayout.sequenceLayout(32, JAVA_BYTE).withName("label"),
+            MemoryLayout.sequenceLayout(32, JAVA_BYTE).withName("manufacturerID"),
+            MemoryLayout.sequenceLayout(16, JAVA_BYTE).withName("model"),
+            MemoryLayout.sequenceLayout(16, JAVA_BYTE).withName("serialNumber"),
+            JAVA_INT_UNALIGNED.withName("flags"),
+            JAVA_INT_UNALIGNED.withName("maxSessionCount"),
+            JAVA_INT_UNALIGNED.withName("sessionCount"),
+            JAVA_INT_UNALIGNED.withName("maxRwSessionCount"),
+            JAVA_INT_UNALIGNED.withName("rwSessionCount"),
+            JAVA_INT_UNALIGNED.withName("maxPinLen"),
+            JAVA_INT_UNALIGNED.withName("minPinLen"),
+            JAVA_INT_UNALIGNED.withName("totalPublicMemory"),
+            JAVA_INT_UNALIGNED.withName("freePublicMemory"),
+            JAVA_INT_UNALIGNED.withName("totalPrivateMemory"),
+            JAVA_INT_UNALIGNED.withName("freePrivateMemory"),
+            getCkVersionLayout().withName("hardwareVersion"),
+            getCkVersionLayout().withName("firmwareVersion"),
+            MemoryLayout.sequenceLayout(16, JAVA_BYTE).withName("utcTime")
+        ).withName("CK_TOKEN_INFO");
+    }
 }

@@ -46,18 +46,58 @@ public abstract class Template {
     private final MethodHandle ckInfoLibraryVersionHandle;
 
     /**
+     * CK_SLOT_INFO group layout.
+     */
+    private final GroupLayout ckSlotInfoLayout;
+
+    /**
+     * CK_SLOT_INFO hardware version var handle.
+     */
+    private final MethodHandle ckSlotInfoHardwareVersionHandle;
+
+    /**
+     * CK_SLOT_INFO firmware version var handle.
+     */
+    private final MethodHandle ckSlotInfoFirmwareVersionHandle;
+
+    /**
+     * CK_TOKEN_INFO group layout.
+     */
+    private final GroupLayout ckTokenInfoLayout;
+
+    /**
+     * CK_TOKEN_INFO hardware version var handle.
+     */
+    private final MethodHandle ckTokenInfoHardwareVersionHandle;
+
+    /**
+     * CK_TOKEN_INFO firmware version var handle.
+     */
+    private final MethodHandle ckTokenInfoFirmwareVersionHandle;
+
+    /**
      * Create a new template and initialize all group layouts and var handles.
      */
     public Template() {
-        // Build the version template and handles
+        // Build the version layout and handles
         this.ckVersionLayout = buildCkVersionLayout();
         this.ckVersionMajorVarHandle = ckVersionLayout.varHandle(MemoryLayout.PathElement.groupElement("major"));
         this.ckVersionMinorHandle = ckVersionLayout.varHandle(MemoryLayout.PathElement.groupElement("minor"));
 
-        // Build the info template and handles
+        // Build the info layout and handles
         this.ckInfoLayout = buildCkInfoLayout();
         this.ckInfoCryptokiVersionHandle = ckInfoLayout.sliceHandle(MemoryLayout.PathElement.groupElement("cryptokiVersion"));
         this.ckInfoLibraryVersionHandle = ckInfoLayout.sliceHandle(MemoryLayout.PathElement.groupElement("libraryVersion"));
+
+        // Build the slot info layout and handles
+        this.ckSlotInfoLayout = buildCkSlotInfoLayout();
+        this.ckSlotInfoHardwareVersionHandle = ckSlotInfoLayout.sliceHandle(MemoryLayout.PathElement.groupElement("hardwareVersion"));
+        this.ckSlotInfoFirmwareVersionHandle = ckSlotInfoLayout.sliceHandle(MemoryLayout.PathElement.groupElement("firmwareVersion"));
+
+        // Build the token info layout and handles
+        this.ckTokenInfoLayout = buildCkTokenInfoLayout();
+        this.ckTokenInfoHardwareVersionHandle = ckTokenInfoLayout.sliceHandle(MemoryLayout.PathElement.groupElement("hardwareVersion"));
+        this.ckTokenInfoFirmwareVersionHandle = ckTokenInfoLayout.sliceHandle(MemoryLayout.PathElement.groupElement("firmwareVersion"));
     }
 
     /**
@@ -139,6 +179,60 @@ public abstract class Template {
     }
 
     /**
+     * Get the CK_SLOT_INFO group layout.
+     *
+     * @return Group layout
+     */
+    public GroupLayout getCkSlotInfoLayout() {
+        return ckSlotInfoLayout;
+    }
+
+    /**
+     * Get the CK_SLOT_INFO firmware version var handle.
+     *
+     * @return Var handle
+     */
+    public MethodHandle getCkSlotInfoFirmwareVersionHandle() {
+        return ckSlotInfoFirmwareVersionHandle;
+    }
+
+    /**
+     * Get the CK_SLOT_INFO hardware version var handle.
+     *
+     * @return Var handle
+     */
+    public MethodHandle getCkSlotInfoHardwareVersionHandle() {
+        return ckSlotInfoHardwareVersionHandle;
+    }
+
+    /**
+     * Get the CK_TOKEN_INFO group layout.
+     *
+     * @return Group layout
+     */
+    public GroupLayout getCkTokenInfoLayout() {
+        return ckTokenInfoLayout;
+    }
+
+    /**
+     * Get the CK_TOKEN_INFO firmware version var handle.
+     *
+     * @return Var handle
+     */
+    public MethodHandle getCkTokenInfoFirmwareVersionHandle() {
+        return ckTokenInfoFirmwareVersionHandle;
+    }
+
+    /**
+     * Get the CK_TOKEN_INFO hardware version var handle.
+     *
+     * @return Var handle
+     */
+    public MethodHandle getCkTokenInfoHardwareVersionHandle() {
+        return ckTokenInfoHardwareVersionHandle;
+    }
+
+    /**
      * Get the platform/architecture specific long value, mostly 4 or 8 bytes. A 4 byte has to be casted to a long.
      *
      * @param memorySegment Allocated memory segment
@@ -161,4 +255,18 @@ public abstract class Template {
      * @return Specific CK_INFO group layout
      */
     protected abstract GroupLayout buildCkInfoLayout();
+
+    /**
+     * Build the platform/architecture specific CK_SLOT_INFO group layout.
+     *
+     * @return Specific CK_SLOT_INFO group layout
+     */
+    protected abstract GroupLayout buildCkTokenInfoLayout();
+
+    /**
+     * Build the platform/architecture specific CK_TOKEN_INFO group layout.
+     *
+     * @return Specific CK_TOKEN_INFO group layout
+     */
+    protected abstract GroupLayout buildCkSlotInfoLayout();
 }

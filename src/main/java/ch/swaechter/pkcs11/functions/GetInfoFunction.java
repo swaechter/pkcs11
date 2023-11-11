@@ -1,4 +1,4 @@
-package ch.swaechter.pkcs11.function;
+package ch.swaechter.pkcs11.functions;
 
 import ch.swaechter.pkcs11.Pkcs11Exception;
 import ch.swaechter.pkcs11.headers.CkInfo;

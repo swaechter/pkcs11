@@ -1,14 +1,15 @@
 package ch.swaechter.pkcs11;
 
-import ch.swaechter.pkcs11.function.FinalizeFunction;
-import ch.swaechter.pkcs11.function.GetInfoFunction;
-import ch.swaechter.pkcs11.function.InitializeFunction;
+import ch.swaechter.pkcs11.functions.*;
 import ch.swaechter.pkcs11.headers.CkInfo;
+import ch.swaechter.pkcs11.headers.CkSlotInfo;
+import ch.swaechter.pkcs11.headers.CkTokenInfo;
 import ch.swaechter.pkcs11.templates.Template;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.Linker;
 import java.lang.foreign.SymbolLookup;
+import java.util.List;
 
 /**
  * The PKCS11 library allows direct interactions with the PKCS11 middleware. The library is as simple as possible and
@@ -100,6 +101,52 @@ public class Pkcs11Library {
             // Invoke the function
             GetInfoFunction function = new GetInfoFunction(linker, loaderLookup, template);
             return function.invokeFunction(arena);
+        }
+    }
+
+    /**
+     * Get all slots from the PKCS11 middleware.
+     *
+     * @param tokenPresent Flag whether the tokens have to be present
+     * @param maxSlots     Maximum numbers of slot to search for
+     * @return List with the slot IDs
+     * @throws Pkcs11Exception Thrown if the slot list can't be read
+     */
+    public List<Long> C_GetSlotList(boolean tokenPresent, int maxSlots) throws Pkcs11Exception {
+        try (Arena arena = Arena.ofConfined()) {
+            // Invoke the function
+            GetSlotListFunction function = new GetSlotListFunction(linker, loaderLookup, template);
+            return function.invokeFunction(arena, tokenPresent, maxSlots);
+        }
+    }
+
+    /**
+     * Get the slot information from a slot.
+     *
+     * @param slotId ID of the slot
+     * @return Slot information
+     * @throws Pkcs11Exception Thrown if the slot does not exist or can't be read
+     */
+    public CkSlotInfo C_GetSlotInfo(Long slotId) throws Pkcs11Exception {
+        try (Arena arena = Arena.ofConfined()) {
+            // Invoke the function
+            GetSlotInfoFunction function = new GetSlotInfoFunction(linker, loaderLookup, template);
+            return function.invokeFunction(arena, slotId);
+        }
+    }
+
+    /**
+     * Get the token information from a slot.
+     *
+     * @param slotId ID of the slot
+     * @return Token information
+     * @throws Pkcs11Exception Thrown if the slot does not exist, the token is not present or can't be read
+     */
+    public CkTokenInfo C_GetTokenInfo(Long slotId) throws Pkcs11Exception {
+        try (Arena arena = Arena.ofConfined()) {
+            // Invoke the function
+            GetTokenInfoFunction function = new GetTokenInfoFunction(linker, loaderLookup, template);
+            return function.invokeFunction(arena, slotId);
         }
     }
 }
