@@ -42,7 +42,7 @@ public class AlignedLinuxTemplate extends Template {
     protected GroupLayout buildCkInfoLayout() {
         return MemoryLayout.structLayout(
             getCkVersionLayout().withName("cryptokiVersion"),
-            MemoryLayout.sequenceLayout(32, JAVA_BYTE).withName("manufacturerID"),
+            MemoryLayout.sequenceLayout(32, JAVA_BYTE).withName("manufacturerId"),
             MemoryLayout.paddingLayout(6),
             JAVA_LONG.withName("flags"),
             MemoryLayout.sequenceLayout(32, JAVA_BYTE).withName("libraryDescription"),
