@@ -56,7 +56,7 @@ public class GetTokenInfoFunction extends AbstractFunction {
             String label = getFixedString(tokenInfoMemorySegment, getTemplate().getCkTokenInfoLayout(), "label");
 
             // Get the manufacturer ID
-            String manufacturerId = getFixedString(tokenInfoMemorySegment, getTemplate().getCkTokenInfoLayout(), "manufacturerID");
+            String manufacturerId = getFixedString(tokenInfoMemorySegment, getTemplate().getCkTokenInfoLayout(), "manufacturerId");
 
             // Get the model
             String model = getFixedString(tokenInfoMemorySegment, getTemplate().getCkTokenInfoLayout(), "model");

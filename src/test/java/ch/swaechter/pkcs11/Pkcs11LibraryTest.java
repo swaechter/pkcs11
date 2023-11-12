@@ -88,7 +88,7 @@ public class Pkcs11LibraryTest {
 
             // Get the slot information
             CkSlotInfo ckSlotInfo = pkcs11LowLevel.C_GetSlotInfo(slotId);
-            assertEquals("SafeNet Token JC 0                                              ", ckSlotInfo.slotDescription());
+            assertTrue(ckSlotInfo.slotDescription().equals("SafeNet Token JC 0                                              ") || ckSlotInfo.slotDescription().equals("SafeNet eToken 5100 [eToken 5110 SC] 00 00                      "));
             assertEquals("SafeNet, Inc.                   ", ckSlotInfo.manufacturerId());
             assertEquals(7, ckSlotInfo.flags());
             CkVersion hardwareVersion = ckSlotInfo.hardwareVersion();
@@ -133,6 +133,14 @@ public class Pkcs11LibraryTest {
             assertEquals(32767, ckTokenInfo.freePublicMemory());
             assertEquals(81920, ckTokenInfo.totalPrivateMemory());
             assertEquals(32767, ckTokenInfo.freePrivateMemory());
+            CkVersion hardwareVersion = ckTokenInfo.hardwareVersion();
+            assertNotNull(hardwareVersion);
+            assertEquals(16, hardwareVersion.major());
+            assertEquals(0, hardwareVersion.minor());
+            CkVersion firmwareVersion = ckTokenInfo.firmwareVersion();
+            assertNotNull(firmwareVersion);
+            assertEquals(0, firmwareVersion.major());
+            assertEquals(0, firmwareVersion.minor());
             assertArrayEquals(new byte[16], ckTokenInfo.utcTime().getBytes(StandardCharsets.UTF_8));
         }
     }

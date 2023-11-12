@@ -5,7 +5,8 @@ import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.VarHandle;
 
-import static java.lang.foreign.ValueLayout.*;
+import static java.lang.foreign.ValueLayout.JAVA_BYTE;
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 /**
  * Template that represents a Linux system with 8 byte aligned struct layouts, mostly Linux x64. Long takes 8 bytes.
@@ -57,10 +58,11 @@ public class AlignedLinuxTemplate extends Template {
     protected GroupLayout buildCkSlotInfoLayout() {
         return MemoryLayout.structLayout(
             MemoryLayout.sequenceLayout(64, JAVA_BYTE).withName("slotDescription"),
-            MemoryLayout.sequenceLayout(32, JAVA_BYTE).withName("manufacturerID"),
+            MemoryLayout.sequenceLayout(32, JAVA_BYTE).withName("manufacturerId"),
             JAVA_LONG.withName("flags"),
             getCkVersionLayout().withName("hardwareVersion"),
-            getCkVersionLayout().withName("firmwareVersion")
+            getCkVersionLayout().withName("firmwareVersion"),
+            MemoryLayout.paddingLayout(4)
         ).withName("CK_SLOT_INFO");
     }
 
@@ -71,22 +73,23 @@ public class AlignedLinuxTemplate extends Template {
     protected GroupLayout buildCkTokenInfoLayout() {
         return MemoryLayout.structLayout(
             MemoryLayout.sequenceLayout(32, JAVA_BYTE).withName("label"),
-            MemoryLayout.sequenceLayout(32, JAVA_BYTE).withName("manufacturerID"),
+            MemoryLayout.sequenceLayout(32, JAVA_BYTE).withName("manufacturerId"),
             MemoryLayout.sequenceLayout(16, JAVA_BYTE).withName("model"),
             MemoryLayout.sequenceLayout(16, JAVA_BYTE).withName("serialNumber"),
-            JAVA_INT.withName("flags"),
-            JAVA_INT.withName("maxSessionCount"),
-            JAVA_INT.withName("sessionCount"),
-            JAVA_INT.withName("maxRwSessionCount"),
-            JAVA_INT.withName("rwSessionCount"),
-            JAVA_INT.withName("maxPinLen"),
-            JAVA_INT.withName("minPinLen"),
-            JAVA_INT.withName("totalPublicMemory"),
-            JAVA_INT.withName("freePublicMemory"),
-            JAVA_INT.withName("totalPrivateMemory"),
-            JAVA_INT.withName("freePrivateMemory"),
+            JAVA_LONG.withName("flags"),
+            JAVA_LONG.withName("maxSessionCount"),
+            JAVA_LONG.withName("sessionCount"),
+            JAVA_LONG.withName("maxRwSessionCount"),
+            JAVA_LONG.withName("rwSessionCount"),
+            JAVA_LONG.withName("maxPinLen"),
+            JAVA_LONG.withName("minPinLen"),
+            JAVA_LONG.withName("totalPublicMemory"),
+            JAVA_LONG.withName("freePublicMemory"),
+            JAVA_LONG.withName("totalPrivateMemory"),
+            JAVA_LONG.withName("freePrivateMemory"),
             getCkVersionLayout().withName("hardwareVersion"),
             getCkVersionLayout().withName("firmwareVersion"),
+            MemoryLayout.paddingLayout(4),
             MemoryLayout.sequenceLayout(16, JAVA_BYTE).withName("utcTime")
         ).withName("CK_TOKEN_INFO");
     }

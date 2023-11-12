@@ -33,6 +33,7 @@ public class GetInfoFunction extends AbstractFunction {
     /**
      * Invoke the function.
      *
+     * @param arena Memory arena
      * @return Middleware information
      * @throws Pkcs11Exception Thrown if the function invocation fails
      */
@@ -57,7 +58,7 @@ public class GetInfoFunction extends AbstractFunction {
             CkVersion cryptokiVersion = new CkVersion(cryptokiMajor, cryptokiMinor);
 
             // Get the manufacturer ID
-            String manufacturerId = getFixedString(infoMemorySegment, getTemplate().getCkInfoLayout(), "manufacturerID");
+            String manufacturerId = getFixedString(infoMemorySegment, getTemplate().getCkInfoLayout(), "manufacturerId");
 
             // Vet the library version
             MethodHandle libraryMethodHandle = getTemplate().getCkInfoLibraryVersionHandle();

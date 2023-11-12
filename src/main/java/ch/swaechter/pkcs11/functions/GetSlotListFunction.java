@@ -33,6 +33,10 @@ public class GetSlotListFunction extends AbstractFunction {
     /**
      * Invoke the function.
      *
+     * @param arena        Memory arena
+     * @param tokenPresent Flag whether to only list slots with a token present
+     * @param maxSlots     Maximum numbers of slot to search for
+     * @return All slot IDs
      * @throws Pkcs11Exception Thrown if the function invocation fails
      */
     public List<Long> invokeFunction(Arena arena, boolean tokenPresent, int maxSlots) throws Pkcs11Exception {

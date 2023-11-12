@@ -1,6 +1,7 @@
 package ch.swaechter.pkcs11;
 
 import ch.swaechter.pkcs11.headers.CkInfo;
+import ch.swaechter.pkcs11.objects.Pkcs11Info;
 import ch.swaechter.pkcs11.templates.Template;
 
 import java.io.Closeable;
@@ -102,12 +103,15 @@ public class Pkcs11Module implements Closeable {
      *
      * @throws Pkcs11Exception Thrown if the module info can't be read
      */
-    public CkInfo getInfo() throws Pkcs11Exception {
+    public Pkcs11Info getInfo() throws Pkcs11Exception {
         // Ensure is initialized
         ensureIsInitialized(false);
 
         // Get the info
-        return pkcs11Library.C_GetInfo();
+        CkInfo ckInfo = pkcs11Library.C_GetInfo();
+
+        // Return the info
+        return new Pkcs11Info(ckInfo);
     }
 
     /**

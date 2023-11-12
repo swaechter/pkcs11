@@ -47,7 +47,7 @@ public class GetSlotInfoFunction extends AbstractFunction {
             // Invoke the function
             FunctionDescriptor functionDescriptor = FunctionDescriptor.of(JAVA_INT, JAVA_INT, ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)));
             MethodHandle methodHandle = downCallHandle("C_GetSlotInfo", functionDescriptor);
-            CkResult ckResult = CkResult.valueOf((int) methodHandle.invokeExact((int) slotId, slotInfoMemorySegment));
+            CkResult ckResult = CkResult.valueOf((int) methodHandle.invoke((int) slotId, slotInfoMemorySegment));
             if (ckResult != CkResult.CKR_OK) {
                 throw new Pkcs11Exception("C_GetSlotInfo failed", ckResult);
             }

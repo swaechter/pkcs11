@@ -1,7 +1,7 @@
 package ch.swaechter.pkcs11;
 
-import ch.swaechter.pkcs11.headers.CkInfo;
-import ch.swaechter.pkcs11.headers.CkVersion;
+import ch.swaechter.pkcs11.objects.Pkcs11Info;
+import ch.swaechter.pkcs11.objects.Pkcs11Version;
 import ch.swaechter.pkcs11.templates.AlignedLinuxTemplate;
 import ch.swaechter.pkcs11.templates.PackedWindowsTemplate;
 import ch.swaechter.pkcs11.templates.Template;
@@ -31,17 +31,17 @@ public class Pkcs11ModuleTest {
             pkcs11Module.initializeModule();
 
             // Get the information
-            CkInfo ckInfo = pkcs11Module.getInfo();
+            Pkcs11Info pkcs11Info = pkcs11Module.getInfo();
 
             // Check the information
-            CkVersion cryptokiVersion = ckInfo.cryptokiVersion();
+            Pkcs11Version cryptokiVersion = pkcs11Info.getCryptokiVersion();
             assertNotNull(cryptokiVersion);
             assertEquals(2, cryptokiVersion.major());
             assertEquals(20, cryptokiVersion.minor());
-            assertEquals("SafeNet, Inc.                   ", ckInfo.manufacturerId());
-            assertEquals(0, ckInfo.flags());
-            assertEquals("SafeNet eToken PKCS#11          ", ckInfo.libraryDescription());
-            CkVersion libraryVersion = ckInfo.libraryVersion();
+            assertEquals("SafeNet, Inc.", pkcs11Info.getManufacturerId());
+            assertEquals(0, pkcs11Info.getFlags());
+            assertEquals("SafeNet eToken PKCS#11", pkcs11Info.getLibraryDescription());
+            Pkcs11Version libraryVersion = pkcs11Info.getLibraryVersion();
             assertEquals(10, libraryVersion.major());
             assertTrue(libraryVersion.minor() == 7 || libraryVersion.minor() == 8);
 

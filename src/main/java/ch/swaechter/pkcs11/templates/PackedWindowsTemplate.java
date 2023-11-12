@@ -42,7 +42,7 @@ public class PackedWindowsTemplate extends Template {
     protected GroupLayout buildCkInfoLayout() {
         return MemoryLayout.structLayout(
             getCkVersionLayout().withName("cryptokiVersion"),
-            MemoryLayout.sequenceLayout(32, JAVA_BYTE).withName("manufacturerID"),
+            MemoryLayout.sequenceLayout(32, JAVA_BYTE).withName("manufacturerId"),
             JAVA_INT_UNALIGNED.withName("flags"),
             MemoryLayout.sequenceLayout(32, JAVA_BYTE).withName("libraryDescription"),
             getCkVersionLayout().withName("libraryVersion")
@@ -70,7 +70,7 @@ public class PackedWindowsTemplate extends Template {
     protected GroupLayout buildCkTokenInfoLayout() {
         return MemoryLayout.structLayout(
             MemoryLayout.sequenceLayout(32, JAVA_BYTE).withName("label"),
-            MemoryLayout.sequenceLayout(32, JAVA_BYTE).withName("manufacturerID"),
+            MemoryLayout.sequenceLayout(32, JAVA_BYTE).withName("manufacturerId"),
             MemoryLayout.sequenceLayout(16, JAVA_BYTE).withName("model"),
             MemoryLayout.sequenceLayout(16, JAVA_BYTE).withName("serialNumber"),
             JAVA_INT_UNALIGNED.withName("flags"),
