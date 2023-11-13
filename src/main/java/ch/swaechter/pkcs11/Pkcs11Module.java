@@ -2,9 +2,12 @@ package ch.swaechter.pkcs11;
 
 import ch.swaechter.pkcs11.headers.CkInfo;
 import ch.swaechter.pkcs11.objects.Pkcs11Info;
+import ch.swaechter.pkcs11.objects.Pkcs11Slot;
 import ch.swaechter.pkcs11.templates.Template;
 
 import java.io.Closeable;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * The PKCS11 module allows an object-oriented interaction with the PKCS11 library/middleware.
@@ -112,6 +115,30 @@ public class Pkcs11Module implements Closeable {
 
         // Return the info
         return new Pkcs11Info(ckInfo);
+    }
+
+    /**
+     * Get all slots.
+     *
+     * @param tokenPresent Flag whether the tokens have to be present
+     * @param maxSlots     Maximum numbers of slot to search for
+     * @return List with the slots
+     * @throws Pkcs11Exception Thrown if the slot list can't be read
+     */
+    public List<Pkcs11Slot> getSlots(boolean tokenPresent, int maxSlots) throws Pkcs11Exception {
+        // Ensure is initialized
+        ensureIsInitialized(false);
+
+        // Get the slots
+        List<Long> slotIds = pkcs11Library.C_GetSlotList(tokenPresent, maxSlots);
+
+        // Return the slots
+        List<Pkcs11Slot> pkcs11Slots = new ArrayList<>(slotIds.size());
+        for (Long slotId : slotIds) {
+            Pkcs11Slot pkcs11Slot = new Pkcs11Slot(pkcs11Library, slotId);
+            pkcs11Slots.add(pkcs11Slot);
+        }
+        return pkcs11Slots;
     }
 
     /**

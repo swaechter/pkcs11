@@ -20,7 +20,7 @@ package ch.swaechter.pkcs11.headers;
  * @param freePrivateMemory  The amount of free (unused) memory on the token in bytes for private objects
  * @param hardwareVersion    Version number of hardware
  * @param firmwareVersion    Version number of firmware
- * @param utcTime            Current time as a character-string of length 16, represented in the format YYYYMMDDhhmmssxx (4 characters for the year;  2 characters each for the month, the day, the hour, the minute, and the second; and 2 additional reserved ‘0’ characters).  The value of this field only makes sense for tokens equipped with a clock, as indicated in the token information flag
+ * @param utcTime            Current time as a character-string of length 16, represented in the format YYYYMMDDhhmmssxx (4 characters for the year;  2 characters each for the month, the day, the hour, the minute, and the second; and 2 additional reserved ‘0’ characters). The value of this field only makes sense for tokens equipped with a clock, as indicated in the token information flag
  * @author Simon Wächter
  */
 public record CkTokenInfo(
