@@ -3,6 +3,7 @@ package ch.swaechter.pkcs11.objects;
 import ch.swaechter.pkcs11.Pkcs11Exception;
 import ch.swaechter.pkcs11.Pkcs11Library;
 import ch.swaechter.pkcs11.headers.CkSessionInfo;
+import ch.swaechter.pkcs11.headers.CkUserType;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -56,6 +57,28 @@ public class Pkcs11Session implements Closeable {
 
         // Return the session info
         return new Pkcs11SessionInfo(ckSessionInfo);
+    }
+
+    /**
+     * Log a user into the token.
+     *
+     * @param ckUserType Type of the user
+     * @param pinOrPuk   PIN/PUK or null in case the token has a protected authentication path
+     * @throws Pkcs11Exception Thrown for an error during login
+     */
+    public void loginUser(CkUserType ckUserType, String pinOrPuk) throws Pkcs11Exception {
+        // Login the user
+        pkcs11Library.C_Login(sessionId, ckUserType, pinOrPuk);
+    }
+
+    /**
+     * Log a user out of the token.
+     *
+     * @throws Pkcs11Exception Thrown for an error during logout
+     */
+    public void logoutUser() throws Pkcs11Exception {
+        // Logout the user
+        pkcs11Library.C_Logout(sessionId);
     }
 
     /**

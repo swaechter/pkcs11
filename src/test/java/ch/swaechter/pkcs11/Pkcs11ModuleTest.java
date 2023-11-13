@@ -1,6 +1,7 @@
 package ch.swaechter.pkcs11;
 
 import ch.swaechter.pkcs11.headers.CkSessionState;
+import ch.swaechter.pkcs11.headers.CkUserType;
 import ch.swaechter.pkcs11.objects.*;
 import ch.swaechter.pkcs11.templates.AlignedLinuxTemplate;
 import ch.swaechter.pkcs11.templates.PackedWindowsTemplate;
@@ -144,6 +145,18 @@ public class Pkcs11ModuleTest {
                         assertEquals(0, pkcs11SessionInfo.getDeviceError());
                         assertTrue(pkcs11SessionInfo.isRwSession());
                         assertTrue(pkcs11SessionInfo.isSerialSession());
+
+                        // Login and logout as user
+                        pkcs11Session.loginUser(CkUserType.CKU_USER, Pkcs11Template.PKCS11_TOKEN_PIN);
+                        pkcs11Session.logoutUser();
+
+                        // Login and logout as security officer
+                        pkcs11Session.loginUser(CkUserType.CKU_SO, Pkcs11Template.PKCS11_TOKEN_SO_PIN);
+                        pkcs11Session.logoutUser();
+
+                        // Try to log in via protected authentication path
+                        Pkcs11Exception pkcs11Exception = assertThrows(Pkcs11Exception.class, () -> pkcs11Session.loginUser(CkUserType.CKU_SO, null));
+                        assertTrue(pkcs11Exception.getMessage().contains("C_Login failed"));
                     }
 
                     // Close all sessions on the token

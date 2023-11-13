@@ -1,10 +1,7 @@
 package ch.swaechter.pkcs11;
 
 import ch.swaechter.pkcs11.functions.*;
-import ch.swaechter.pkcs11.headers.CkInfo;
-import ch.swaechter.pkcs11.headers.CkSessionInfo;
-import ch.swaechter.pkcs11.headers.CkSlotInfo;
-import ch.swaechter.pkcs11.headers.CkTokenInfo;
+import ch.swaechter.pkcs11.headers.*;
 import ch.swaechter.pkcs11.templates.Template;
 
 import java.lang.foreign.Arena;
@@ -204,5 +201,33 @@ public class Pkcs11Library {
             GetSessionInfoFunction function = new GetSessionInfoFunction(linker, loaderLookup, template);
             return function.invokeFunction(arena, sessionId);
         }
+    }
+
+    /**
+     * Log a user into the token.
+     *
+     * @param sessionId  ID of the session
+     * @param ckUserType Type of the user
+     * @param pinOrPuk   PIN/PUK or null in case the token has a protected authentication path
+     * @throws Pkcs11Exception Thrown if the session does not exist or an error during login
+     */
+    public void C_Login(long sessionId, CkUserType ckUserType, String pinOrPuk) throws Pkcs11Exception {
+        try (Arena arena = Arena.ofConfined()) {
+            // Invoke the function
+            LoginFunction function = new LoginFunction(linker, loaderLookup, template);
+            function.invokeFunction(arena, sessionId, ckUserType, pinOrPuk);
+        }
+    }
+
+    /**
+     * Log a user out of the token.
+     *
+     * @param sessionId ID of the session
+     * @throws Pkcs11Exception Thrown if the session does not exist or an error during logout
+     */
+    public void C_Logout(long sessionId) throws Pkcs11Exception {
+        // Invoke the function
+        LogoutFunction function = new LogoutFunction(linker, loaderLookup, template);
+        function.invokeFunction(sessionId);
     }
 }

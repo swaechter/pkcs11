@@ -165,4 +165,30 @@ public class Pkcs11LibraryTest {
         // Close all sessions for the slot
         pkcs11LowLevel.C_CloseAllSessions(slotId);
     }
+
+    @Test
+    public void testLoginAndLogout() throws Pkcs11Exception {
+        // Define the values
+        long slotId = 0;
+        long sessionInfoFlags = CkSessionInfoFlag.CKF_RW_SESSION.value | CkSessionInfoFlag.CKF_SERIAL_SESSION.value;
+
+        // Open a new session
+        long sessionId = pkcs11LowLevel.C_OpenSession(slotId, sessionInfoFlags);
+        assertTrue(sessionId > 0);
+
+        // Login and logout as user
+        pkcs11LowLevel.C_Login(sessionId, CkUserType.CKU_USER, Pkcs11Template.PKCS11_TOKEN_PIN);
+        pkcs11LowLevel.C_Logout(sessionId);
+
+        // Login and logout as security officer
+        pkcs11LowLevel.C_Login(sessionId, CkUserType.CKU_SO, Pkcs11Template.PKCS11_TOKEN_SO_PIN);
+        pkcs11LowLevel.C_Logout(sessionId);
+
+        // Try to log in via protected authentication path
+        Pkcs11Exception pkcs11Exception = assertThrows(Pkcs11Exception.class, () -> pkcs11LowLevel.C_Login(sessionId, CkUserType.CKU_SO, null));
+        assertTrue(pkcs11Exception.getMessage().contains("C_Login failed"));
+
+        // Close the session
+        pkcs11LowLevel.C_CloseSession(sessionId);
+    }
 }
