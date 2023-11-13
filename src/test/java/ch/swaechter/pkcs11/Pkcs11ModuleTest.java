@@ -1,5 +1,6 @@
 package ch.swaechter.pkcs11;
 
+import ch.swaechter.pkcs11.headers.CkSessionState;
 import ch.swaechter.pkcs11.objects.*;
 import ch.swaechter.pkcs11.templates.AlignedLinuxTemplate;
 import ch.swaechter.pkcs11.templates.PackedWindowsTemplate;
@@ -19,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class Pkcs11ModuleTest {
 
     @Test
-    public void testWorkflow() throws Pkcs11Exception {
+    public void testWorkflow() throws Exception {
         // Create the template
         Template template = Template.detectTemplate();
         assertTrue(template instanceof PackedWindowsTemplate || template instanceof AlignedLinuxTemplate);
@@ -79,6 +80,7 @@ public class Pkcs11ModuleTest {
                     // Get the token
                     Pkcs11Token pkcs11Token = pkcs11Slot.getToken();
                     assertNotNull(pkcs11Token);
+                    assertTrue(pkcs11Token.isLoginRequired());
 
                     // Get the token info
                     Pkcs11TokenInfo pkcs11TokenInfo = pkcs11Token.getTokenInfo();
@@ -126,6 +128,26 @@ public class Pkcs11ModuleTest {
                     assertFalse(pkcs11TokenInfo.isSoPinLocked());
                     assertFalse(pkcs11TokenInfo.isSoPinToBeChanged());
                     assertFalse(pkcs11TokenInfo.isInErrorState());
+
+                    // Open a session
+                    boolean rwSession = true;
+                    boolean serialSession = true;
+                    try (Pkcs11Session pkcs11Session = pkcs11Token.openSession(rwSession, serialSession)) {
+                        // Ensure the session ID is larger than zero
+                        assertTrue(pkcs11Session.getSessionId() > 0);
+
+                        // Get the session info
+                        Pkcs11SessionInfo pkcs11SessionInfo = pkcs11Session.getSessionInfo();
+                        assertEquals(pkcs11Slot.getSlotId(), pkcs11SessionInfo.getSlotId());
+                        assertEquals(CkSessionState.CKS_RW_PUBLIC_SESSION, pkcs11SessionInfo.getSessionState());
+                        assertEquals(6, pkcs11SessionInfo.getFlags());
+                        assertEquals(0, pkcs11SessionInfo.getDeviceError());
+                        assertTrue(pkcs11SessionInfo.isRwSession());
+                        assertTrue(pkcs11SessionInfo.isSerialSession());
+                    }
+
+                    // Close all sessions on the token
+                    pkcs11Token.closeAllSessions();
                 }
             }
 

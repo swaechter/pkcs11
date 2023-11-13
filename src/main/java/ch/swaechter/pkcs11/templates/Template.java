@@ -76,6 +76,11 @@ public abstract class Template {
     private final MethodHandle ckTokenInfoFirmwareVersionHandle;
 
     /**
+     * CK_SESSION_INFO group layout.
+     */
+    private final GroupLayout ckSessionInfoLayout;
+
+    /**
      * Create a new template and initialize all group layouts and var handles.
      */
     public Template() {
@@ -98,6 +103,9 @@ public abstract class Template {
         this.ckTokenInfoLayout = buildCkTokenInfoLayout();
         this.ckTokenInfoHardwareVersionHandle = ckTokenInfoLayout.sliceHandle(MemoryLayout.PathElement.groupElement("hardwareVersion"));
         this.ckTokenInfoFirmwareVersionHandle = ckTokenInfoLayout.sliceHandle(MemoryLayout.PathElement.groupElement("firmwareVersion"));
+
+        // Build the session info layout
+        this.ckSessionInfoLayout = buildCkSessionInfoLayout();
     }
 
     /**
@@ -233,6 +241,15 @@ public abstract class Template {
     }
 
     /**
+     * Get the CK_SESSION_INFO group layout.
+     *
+     * @return Group layout
+     */
+    public GroupLayout getCkSessionInfoLayout() {
+        return ckSessionInfoLayout;
+    }
+
+    /**
      * Get the platform/architecture specific long value, mostly 4 or 8 bytes. A 4 byte has to be casted to a long.
      *
      * @param memorySegment Allocated memory segment
@@ -269,4 +286,11 @@ public abstract class Template {
      * @return Specific CK_TOKEN_INFO group layout
      */
     protected abstract GroupLayout buildCkSlotInfoLayout();
+
+    /**
+     * Build the platform/architecture specific CK_SESSION_INFO group layout.
+     *
+     * @return Specific CK_SESSION_INFO group layout
+     */
+    protected abstract GroupLayout buildCkSessionInfoLayout();
 }

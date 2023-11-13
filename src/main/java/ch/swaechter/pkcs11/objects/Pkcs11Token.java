@@ -2,6 +2,7 @@ package ch.swaechter.pkcs11.objects;
 
 import ch.swaechter.pkcs11.Pkcs11Exception;
 import ch.swaechter.pkcs11.Pkcs11Library;
+import ch.swaechter.pkcs11.headers.CkSessionInfoFlag;
 import ch.swaechter.pkcs11.headers.CkTokenInfo;
 
 /**
@@ -53,5 +54,48 @@ public class Pkcs11Token {
 
         // Return the token info
         return new Pkcs11TokenInfo(ckTokenInfo);
+    }
+
+    /**
+     * Open a new PKCS11 session in the PKCS11 middleware.
+     *
+     * @param rwSession     Flag whether the session is read/write or read-only.
+     * @param serialSession Flag used for backwards compatibility. Always set to true
+     * @return Opened session
+     * @throws Pkcs11Exception Thrown if the slot does not exist or the session can't be opened
+     */
+    public Pkcs11Session openSession(boolean rwSession, boolean serialSession) throws Pkcs11Exception {
+        // Build the flags
+        long flags = 0L;
+        flags |= rwSession ? CkSessionInfoFlag.CKF_RW_SESSION.value : 0L;
+        flags |= serialSession ? CkSessionInfoFlag.CKF_SERIAL_SESSION.value : 0L;
+
+        // Open a new session
+        long sessionId = pkcs11Library.C_OpenSession(slotId, flags);
+
+        // Return the session
+        return new Pkcs11Session(pkcs11Library, sessionId);
+    }
+
+    /**
+     * Close all existing sessions for the slot in the PKCS11 middleware.
+     *
+     * @throws Pkcs11Exception Thrown if the sessions can't be closed
+     */
+    public void closeAllSessions() throws Pkcs11Exception {
+        // Close all sessions on the token
+        pkcs11Library.C_CloseAllSessions(slotId);
+    }
+
+    /**
+     * Check whether a login is required.
+     *
+     * @return Login is required or not
+     * @throws Pkcs11Exception Thrown if the token info can't be read
+     */
+    public boolean isLoginRequired() throws Pkcs11Exception {
+        // Get the token info
+        Pkcs11TokenInfo pkcs11TokenInfo = getTokenInfo();
+        return pkcs11TokenInfo.isLoginRequired();
     }
 }

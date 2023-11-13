@@ -89,4 +89,17 @@ public class PackedWindowsTemplate extends Template {
             MemoryLayout.sequenceLayout(16, JAVA_BYTE).withName("utcTime")
         ).withName("CK_TOKEN_INFO");
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected GroupLayout buildCkSessionInfoLayout() {
+        return MemoryLayout.structLayout(
+            JAVA_INT_UNALIGNED.withName("slotId"),
+            JAVA_INT_UNALIGNED.withName("state"),
+            JAVA_INT_UNALIGNED.withName("flags"),
+            JAVA_INT_UNALIGNED.withName("deviceError")
+        ).withName("CK_SESSION_INFO");
+    }
 }

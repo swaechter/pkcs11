@@ -2,6 +2,7 @@ package ch.swaechter.pkcs11;
 
 import ch.swaechter.pkcs11.functions.*;
 import ch.swaechter.pkcs11.headers.CkInfo;
+import ch.swaechter.pkcs11.headers.CkSessionInfo;
 import ch.swaechter.pkcs11.headers.CkSlotInfo;
 import ch.swaechter.pkcs11.headers.CkTokenInfo;
 import ch.swaechter.pkcs11.templates.Template;
@@ -127,7 +128,7 @@ public class Pkcs11Library {
      * @return Slot information
      * @throws Pkcs11Exception Thrown if the slot does not exist or can't be read
      */
-    public CkSlotInfo C_GetSlotInfo(Long slotId) throws Pkcs11Exception {
+    public CkSlotInfo C_GetSlotInfo(long slotId) throws Pkcs11Exception {
         try (Arena arena = Arena.ofConfined()) {
             // Invoke the function
             GetSlotInfoFunction function = new GetSlotInfoFunction(linker, loaderLookup, template);
@@ -142,11 +143,66 @@ public class Pkcs11Library {
      * @return Token information
      * @throws Pkcs11Exception Thrown if the slot does not exist, the token is not present or can't be read
      */
-    public CkTokenInfo C_GetTokenInfo(Long slotId) throws Pkcs11Exception {
+    public CkTokenInfo C_GetTokenInfo(long slotId) throws Pkcs11Exception {
         try (Arena arena = Arena.ofConfined()) {
             // Invoke the function
             GetTokenInfoFunction function = new GetTokenInfoFunction(linker, loaderLookup, template);
             return function.invokeFunction(arena, slotId);
+        }
+    }
+
+    /**
+     * Open a new session.
+     *
+     * @param slotId ID of the slot
+     * @param flags  Session flags
+     * @return ID of the session
+     * @throws Pkcs11Exception Thrown if the slot does not exist or the session can't be opened
+     */
+    public long C_OpenSession(long slotId, long flags) throws Pkcs11Exception {
+        try (Arena arena = Arena.ofConfined()) {
+            // Invoke the function
+            OpenSessionFunction function = new OpenSessionFunction(linker, loaderLookup, template);
+            return function.invokeFunction(arena, slotId, flags);
+        }
+    }
+
+    /**
+     * Close an existing session.
+     *
+     * @param sessionId ID of the session
+     * @throws Pkcs11Exception Thrown if the session does not exist or can't be closed
+     */
+    public void C_CloseSession(long sessionId) throws Pkcs11Exception {
+        // Invoke the function
+        CloseSessionFunction function = new CloseSessionFunction(linker, loaderLookup, template);
+        function.invokeFunction(sessionId);
+    }
+
+    /**
+     * Close all existing sessions for the slot.
+     *
+     * @param slotId ID of the slot
+     * @throws Pkcs11Exception Thrown if the slot does not exist or the sessions can't be closed
+     */
+    public void C_CloseAllSessions(long slotId) throws Pkcs11Exception {
+        // Invoke the function
+        CloseAllSessionFunction function = new CloseAllSessionFunction(linker, loaderLookup, template);
+        function.invokeFunction(slotId);
+    }
+
+    /**
+     * Get the session information.
+     *
+     * @param sessionId ID of the session
+     * @return Session information
+     * @throws Pkcs11Exception Thrown if the session does not exist or the session info can't be read
+     */
+    public CkSessionInfo C_GetSessionInfo(long sessionId) throws Pkcs11Exception {
+        try (Arena arena = Arena.ofConfined()) {
+            // Invoke the function
+            GetSessionInfoFunction function = new GetSessionInfoFunction(linker, loaderLookup, template);
+            return function.invokeFunction(arena, sessionId);
         }
     }
 }

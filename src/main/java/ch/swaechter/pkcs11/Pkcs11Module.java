@@ -6,6 +6,7 @@ import ch.swaechter.pkcs11.objects.Pkcs11Slot;
 import ch.swaechter.pkcs11.templates.Template;
 
 import java.io.Closeable;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -146,12 +147,12 @@ public class Pkcs11Module implements Closeable {
      * close will automatically finalize, even when an exception is thrown after the initialization.
      */
     @Override
-    public void close() {
+    public void close() throws IOException {
         try {
             // Finalize if initialized
             finalizeModule();
         } catch (Pkcs11Exception exception) {
-            throw new RuntimeException(exception.getMessage(), exception);
+            throw new IOException(exception.getMessage(), exception);
         }
     }
 }

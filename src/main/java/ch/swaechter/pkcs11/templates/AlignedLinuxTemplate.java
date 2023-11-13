@@ -93,4 +93,17 @@ public class AlignedLinuxTemplate extends Template {
             MemoryLayout.sequenceLayout(16, JAVA_BYTE).withName("utcTime")
         ).withName("CK_TOKEN_INFO");
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected GroupLayout buildCkSessionInfoLayout() {
+        return MemoryLayout.structLayout(
+            JAVA_LONG.withName("slotId"),
+            JAVA_LONG.withName("state"),
+            JAVA_LONG.withName("flags"),
+            JAVA_LONG.withName("deviceError")
+        ).withName("CK_SESSION_INFO");
+    }
 }

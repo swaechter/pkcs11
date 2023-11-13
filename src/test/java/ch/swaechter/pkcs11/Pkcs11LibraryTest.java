@@ -1,9 +1,6 @@
 package ch.swaechter.pkcs11;
 
-import ch.swaechter.pkcs11.headers.CkInfo;
-import ch.swaechter.pkcs11.headers.CkSlotInfo;
-import ch.swaechter.pkcs11.headers.CkTokenInfo;
-import ch.swaechter.pkcs11.headers.CkVersion;
+import ch.swaechter.pkcs11.headers.*;
 import ch.swaechter.pkcs11.templates.AlignedLinuxTemplate;
 import ch.swaechter.pkcs11.templates.PackedWindowsTemplate;
 import ch.swaechter.pkcs11.templates.Template;
@@ -143,5 +140,29 @@ public class Pkcs11LibraryTest {
             assertEquals(0, firmwareVersion.minor());
             assertArrayEquals(new byte[16], ckTokenInfo.utcTime().getBytes(StandardCharsets.UTF_8));
         }
+    }
+
+    @Test
+    public void testSession() throws Pkcs11Exception {
+        // Define the values
+        long slotId = 0;
+        long sessionInfoFlags = CkSessionInfoFlag.CKF_RW_SESSION.value | CkSessionInfoFlag.CKF_SERIAL_SESSION.value;
+
+        // Open a new session
+        long sessionId = pkcs11LowLevel.C_OpenSession(slotId, sessionInfoFlags);
+        assertTrue(sessionId > 0);
+
+        // Get the session information
+        CkSessionInfo ckSessionInfo = pkcs11LowLevel.C_GetSessionInfo(sessionId);
+        assertEquals(slotId, ckSessionInfo.slotId());
+        assertEquals(CkSessionState.CKS_RW_PUBLIC_SESSION, ckSessionInfo.state());
+        assertEquals(6, ckSessionInfo.flags());
+        assertEquals(0, ckSessionInfo.deviceError());
+
+        // Close the session
+        pkcs11LowLevel.C_CloseSession(sessionId);
+
+        // Close all sessions for the slot
+        pkcs11LowLevel.C_CloseAllSessions(slotId);
     }
 }
