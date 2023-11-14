@@ -43,7 +43,7 @@ public class OpenSessionFunction extends AbstractFunction {
             // Allocate all values
             MemorySegment pApplicationMemorySegment = MemorySegment.NULL;
             MemorySegment notifyMemorySegment = MemorySegment.NULL;
-            MemorySegment sessionIdMemorySegment = arena.allocate(ValueLayout.JAVA_LONG);
+            MemorySegment sessionIdMemorySegment = getTemplate().allocateLong(arena);
 
             // Invoke the function
             FunctionDescriptor functionDescriptor = FunctionDescriptor.of(JAVA_INT, JAVA_INT, JAVA_INT, ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)), ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)), ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)));
@@ -54,7 +54,7 @@ public class OpenSessionFunction extends AbstractFunction {
             }
 
             // Get and return the session ID
-            return sessionIdMemorySegment.get(ValueLayout.JAVA_LONG, 0);
+            return getTemplate().getLong(sessionIdMemorySegment);
         } catch (Throwable throwable) {
             throw new Pkcs11Exception("C_OpenSession failed: " + throwable.getMessage(), throwable);
         }

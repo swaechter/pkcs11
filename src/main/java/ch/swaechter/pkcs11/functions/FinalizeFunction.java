@@ -42,8 +42,6 @@ public class FinalizeFunction extends AbstractFunction {
             FunctionDescriptor functionDescriptor = FunctionDescriptor.of(JAVA_INT, ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)));
             MethodHandle methodHandle = downCallHandle("C_Finalize", functionDescriptor);
             CkResult ckResult = CkResult.valueOf((int) methodHandle.invokeExact(pReservedMemorySegment));
-
-            // Check the result
             if (ckResult != CkResult.CKR_OK) {
                 throw new Pkcs11Exception("C_Finalize failed", ckResult);
             }

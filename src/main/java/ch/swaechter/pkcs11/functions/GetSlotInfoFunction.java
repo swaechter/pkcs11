@@ -43,7 +43,6 @@ public class GetSlotInfoFunction extends AbstractFunction {
             // Allocate the slot info struct
             MemorySegment slotInfoMemorySegment = arena.allocate(getTemplate().getCkSlotInfoLayout());
 
-            // TODO: Fix int cast
             // Invoke the function
             FunctionDescriptor functionDescriptor = FunctionDescriptor.of(JAVA_INT, JAVA_INT, ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)));
             MethodHandle methodHandle = downCallHandle("C_GetSlotInfo", functionDescriptor);

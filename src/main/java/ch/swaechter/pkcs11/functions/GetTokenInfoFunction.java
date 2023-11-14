@@ -43,7 +43,6 @@ public class GetTokenInfoFunction extends AbstractFunction {
             // Allocate the token info struct
             MemorySegment tokenInfoMemorySegment = arena.allocate(getTemplate().getCkTokenInfoLayout());
 
-            // TODO: Fix int cast
             // Invoke the function
             FunctionDescriptor functionDescriptor = FunctionDescriptor.of(JAVA_INT, JAVA_INT, ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)));
             MethodHandle methodHandle = downCallHandle("C_GetTokenInfo", functionDescriptor);

@@ -45,11 +45,10 @@ public class GetSlotListFunction extends AbstractFunction {
             byte presentFlag = tokenPresent ? (byte) 0x1 : (byte) 0x0;
 
             // Allocate an array with maxSlots items/potential tokens
-            int[] slotIdBuffer = new int[maxSlots];
-            MemorySegment slotIdsMemorySegment = arena.allocateArray(ValueLayout.JAVA_INT, slotIdBuffer);
+            MemorySegment slotIdsMemorySegment = getTemplate().allocateLongArray(arena, maxSlots);
 
             // Allocate the number of max tokens to search (maxSlots)
-            MemorySegment slotIdCountMemorySegment = arena.allocate(ValueLayout.JAVA_LONG, maxSlots);
+            MemorySegment slotIdCountMemorySegment = getTemplate().allocateLong(arena, maxSlots);
 
             // Invoke the function
             FunctionDescriptor functionDescriptor = FunctionDescriptor.of(JAVA_INT, JAVA_BYTE, ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)), ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)));
@@ -60,13 +59,13 @@ public class GetSlotListFunction extends AbstractFunction {
             }
 
             // Get the slot count
-            int slotCount = (int) slotIdCountMemorySegment.get(ValueLayout.JAVA_LONG, 0);
+            int slotCount = (int) getTemplate().getLong(slotIdCountMemorySegment);
 
             // Get the slot IDs
             List<Long> slotIds = new ArrayList<>(slotCount);
             for (int i = 0; i < slotCount; i++) {
                 // Get slot ID at the given offset
-                long slotId = slotIdBuffer[i];
+                long slotId = getTemplate().getLongFromArray(slotIdsMemorySegment, i);
                 slotIds.add(slotId);
             }
 
