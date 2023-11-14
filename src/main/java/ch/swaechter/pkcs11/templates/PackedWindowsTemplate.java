@@ -1,5 +1,6 @@
 package ch.swaechter.pkcs11.templates;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
@@ -13,6 +14,46 @@ import static java.lang.foreign.ValueLayout.*;
  * @author Simon Wächter
  */
 public class PackedWindowsTemplate extends Template {
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public MemorySegment allocateLong(Arena arena) {
+        return arena.allocate(JAVA_INT);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public MemorySegment allocateLong(Arena arena, long value) {
+        return arena.allocate(JAVA_INT, (int) value);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public MemorySegment allocateLongArray(Arena arena, int size) {
+        return arena.allocateArray(JAVA_INT, size);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public long getLong(MemorySegment memorySegment) {
+        return memorySegment.get(JAVA_INT, 0);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public long getLongFromArray(MemorySegment memorySegment, long index) {
+        return memorySegment.get(JAVA_INT, JAVA_INT.byteSize() * index);
+    }
 
     /**
      * {@inheritDoc}

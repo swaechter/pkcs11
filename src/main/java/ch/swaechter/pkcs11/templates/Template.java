@@ -2,6 +2,7 @@ package ch.swaechter.pkcs11.templates;
 
 import ch.swaechter.pkcs11.Pkcs11Exception;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
@@ -310,6 +311,49 @@ public abstract class Template {
     public VarHandle getCkAttributeValueLenHandle() {
         return ckAttributeValueLenHandle;
     }
+
+    /**
+     * Allocate a long without a value.
+     *
+     * @param arena Memory arena
+     * @return Allocated memory segment
+     */
+    public abstract MemorySegment allocateLong(Arena arena);
+
+    /**
+     * Allocate a long with a value.
+     *
+     * @param arena Memory arena
+     * @param value Value to set
+     * @return Allocated memory segment
+     */
+    public abstract MemorySegment allocateLong(Arena arena, long value);
+
+    /**
+     * Allocate a long array with the given size.
+     *
+     * @param arena Memory arena
+     * @param size  Size of the array
+     * @return Allocated memory segment
+     */
+    public abstract MemorySegment allocateLongArray(Arena arena, int size);
+
+    /**
+     * Read an allocated long value.
+     *
+     * @param memorySegment Allocated memory segment
+     * @return Read value
+     */
+    public abstract long getLong(MemorySegment memorySegment);
+
+    /**
+     * Read an allocated long value from an array at the given array entry index.
+     *
+     * @param memorySegment Allocated memory segment
+     * @param index         Index of the array entry
+     * @return Read value
+     */
+    public abstract long getLongFromArray(MemorySegment memorySegment, long index);
 
     /**
      * Get the platform/architecture specific long value, mostly 4 or 8 bytes. A 4 byte has to be casted to a long.

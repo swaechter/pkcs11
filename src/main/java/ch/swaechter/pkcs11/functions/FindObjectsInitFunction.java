@@ -53,7 +53,7 @@ public class FindObjectsInitFunction extends AbstractFunction {
                 // Set the value
                 if (ckAttribute.pValue() != null) {
                     // Allocate the object class
-                    MemorySegment objectClassMemorySegment = arena.allocate(JAVA_INT_UNALIGNED, ckAttribute.pValue());
+                    MemorySegment objectClassMemorySegment = getTemplate().allocateLong(arena, ckAttribute.pValue());
 
                     // Set the value and length
                     getTemplate().getCkAttributePValueHandle().set(attributesMemorySegment.asSlice(i * getTemplate().getCkAttributeLayout().byteSize()), objectClassMemorySegment);

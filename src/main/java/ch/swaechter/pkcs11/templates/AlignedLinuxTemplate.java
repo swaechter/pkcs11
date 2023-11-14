@@ -1,5 +1,6 @@
 package ch.swaechter.pkcs11.templates;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
@@ -13,6 +14,46 @@ import static java.lang.foreign.ValueLayout.*;
  * @author Simon Wächter
  */
 public class AlignedLinuxTemplate extends Template {
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public MemorySegment allocateLong(Arena arena) {
+        return arena.allocate(JAVA_LONG);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public MemorySegment allocateLong(Arena arena, long value) {
+        return arena.allocate(JAVA_LONG, value);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public MemorySegment allocateLongArray(Arena arena, int size) {
+        return arena.allocateArray(JAVA_LONG, size);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public long getLong(MemorySegment memorySegment) {
+        return memorySegment.get(JAVA_LONG, 0);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public long getLongFromArray(MemorySegment memorySegment, long index) {
+        return memorySegment.get(JAVA_LONG, JAVA_LONG.byteSize() * index);
+    }
 
     /**
      * {@inheritDoc}
@@ -112,11 +153,9 @@ public class AlignedLinuxTemplate extends Template {
     @Override
     protected GroupLayout buildCkAttributeLayout() {
         return MemoryLayout.structLayout(
-            JAVA_INT.withName("type"),
-            MemoryLayout.paddingLayout(4),
+            JAVA_LONG.withName("type"),
             ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)).withName("pValue"),
-            JAVA_INT.withName("valueLen"),
-            MemoryLayout.paddingLayout(4)
+            JAVA_LONG.withName("valueLen")
         ).withName("CK_ATTRIBUTE");
     }
 }
