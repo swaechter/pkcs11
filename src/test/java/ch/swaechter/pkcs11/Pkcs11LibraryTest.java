@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -188,6 +189,59 @@ public class Pkcs11LibraryTest {
         // Try to log in via protected authentication path
         Pkcs11Exception pkcs11Exception = assertThrows(Pkcs11Exception.class, () -> pkcs11Library.C_Login(sessionId, CkUserType.CKU_SO, null));
         assertTrue(pkcs11Exception.getMessage().contains("C_Login failed"));
+
+        // Close the session
+        pkcs11Library.C_CloseSession(sessionId);
+    }
+
+    @Test
+    public void testFindObjects() throws Pkcs11Exception {
+        // Define the values
+        long slotId = 0;
+        long sessionInfoFlags = CkSessionInfoFlag.CKF_RW_SESSION.value | CkSessionInfoFlag.CKF_SERIAL_SESSION.value;
+
+        // Open a new session
+        long sessionId = pkcs11Library.C_OpenSession(slotId, sessionInfoFlags);
+
+        // Login as user
+        pkcs11Library.C_Login(sessionId, CkUserType.CKU_USER, Pkcs11Template.PKCS11_TOKEN_PIN);
+
+        // Define the private key find object template
+        List<CkAttributeValue> ckAttributeSearchTemplate = new ArrayList<>();
+        ckAttributeSearchTemplate.add(new CkAttributeValue(CkAttribute.CKA_CLASS, CkObjectClass.CKO_PRIVATE_KEY.value));
+
+        // Start the private key object finding
+        pkcs11Library.C_FindObjectsInit(sessionId, ckAttributeSearchTemplate);
+
+        // Search the objects
+        int maxObjects = 10;
+        List<Long> objectHandles = pkcs11Library.C_FindObjects(sessionId, maxObjects);
+        assertEquals(1, objectHandles.size());
+        assertTrue(objectHandles.contains(43450373L));
+
+        // Finalize the object search
+        pkcs11Library.C_FindObjectsFinal(sessionId);
+
+        // Define the certificate find object template
+        ckAttributeSearchTemplate.clear();
+        ckAttributeSearchTemplate.add(new CkAttributeValue(CkAttribute.CKA_CLASS, CkObjectClass.CKO_CERTIFICATE.value));
+        ckAttributeSearchTemplate.add(new CkAttributeValue(CkAttribute.CKA_VALUE, null));
+
+        // Start the certificate object finding
+        pkcs11Library.C_FindObjectsInit(sessionId, ckAttributeSearchTemplate);
+
+        // Search the objects
+        objectHandles = pkcs11Library.C_FindObjects(sessionId, maxObjects);
+        assertEquals(3, objectHandles.size());
+        assertTrue(objectHandles.contains(236257286L));
+        assertTrue(objectHandles.contains(11337735L));
+        assertTrue(objectHandles.contains(236781576L));
+
+        // Finalize the object search
+        pkcs11Library.C_FindObjectsFinal(sessionId);
+
+        // Logout
+        pkcs11Library.C_Logout(sessionId);
 
         // Close the session
         pkcs11Library.C_CloseSession(sessionId);

@@ -5,8 +5,7 @@ import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.VarHandle;
 
-import static java.lang.foreign.ValueLayout.JAVA_BYTE;
-import static java.lang.foreign.ValueLayout.JAVA_LONG;
+import static java.lang.foreign.ValueLayout.*;
 
 /**
  * Template that represents a Linux system with 8 byte aligned struct layouts, mostly Linux x64. Long takes 8 bytes.
@@ -105,5 +104,19 @@ public class AlignedLinuxTemplate extends Template {
             JAVA_LONG.withName("flags"),
             JAVA_LONG.withName("deviceError")
         ).withName("CK_SESSION_INFO");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected GroupLayout buildCkAttributeLayout() {
+        return MemoryLayout.structLayout(
+            JAVA_INT.withName("type"),
+            MemoryLayout.paddingLayout(4),
+            ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)).withName("pValue"),
+            JAVA_INT.withName("valueLen"),
+            MemoryLayout.paddingLayout(4)
+        ).withName("CK_ATTRIBUTE");
     }
 }

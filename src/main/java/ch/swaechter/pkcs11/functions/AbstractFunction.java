@@ -99,6 +99,16 @@ public abstract class AbstractFunction {
     }
 
     /**
+     * Get a byte array from the full memory segment.
+     *
+     * @param memorySegment Allocated memory segment
+     * @return Byte array from the full memory segment
+     */
+    public byte[] getBytes(MemorySegment memorySegment) {
+        return memorySegment.toArray(ValueLayout.JAVA_BYTE);
+    }
+
+    /**
      * Get a fixed string value by name. We have to access the memory segment because PKCS11 uses fixed byte ranges
      * that are not null terminated but padded with whitespaces.
      *

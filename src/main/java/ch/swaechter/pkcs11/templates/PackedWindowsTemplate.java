@@ -5,8 +5,7 @@ import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.VarHandle;
 
-import static java.lang.foreign.ValueLayout.JAVA_BYTE;
-import static java.lang.foreign.ValueLayout.JAVA_INT_UNALIGNED;
+import static java.lang.foreign.ValueLayout.*;
 
 /**
  * Template that represents a Windows system with packed struct layouts, mostly Windows x64. Long takes 4 bytes.
@@ -101,5 +100,17 @@ public class PackedWindowsTemplate extends Template {
             JAVA_INT_UNALIGNED.withName("flags"),
             JAVA_INT_UNALIGNED.withName("deviceError")
         ).withName("CK_SESSION_INFO");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected GroupLayout buildCkAttributeLayout() {
+        return MemoryLayout.structLayout(
+            JAVA_INT_UNALIGNED.withName("type"),
+            ADDRESS_UNALIGNED.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)).withName("pValue"),
+            JAVA_INT_UNALIGNED.withName("valueLen")
+        ).withName("CK_ATTRIBUTE");
     }
 }

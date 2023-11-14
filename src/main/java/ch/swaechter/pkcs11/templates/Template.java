@@ -81,6 +81,26 @@ public abstract class Template {
     private final GroupLayout ckSessionInfoLayout;
 
     /**
+     * CK_ATTRIBUT group layout.
+     */
+    private final GroupLayout ckAttributeLayout;
+
+    /**
+     * CK_ATTRIBUT type var handle.
+     */
+    private final VarHandle ckAttributeTypeHandle;
+
+    /**
+     * CK_ATTRIBUT pValue var handle.
+     */
+    private final VarHandle ckAttributePValueHandle;
+
+    /**
+     * CK_ATTRIBUT valueLen var handle.
+     */
+    private final VarHandle ckAttributeValueLenHandle;
+
+    /**
      * Create a new template and initialize all group layouts and var handles.
      */
     public Template() {
@@ -106,6 +126,12 @@ public abstract class Template {
 
         // Build the session info layout
         this.ckSessionInfoLayout = buildCkSessionInfoLayout();
+
+        // Build the attribute layout and handles
+        this.ckAttributeLayout = buildCkAttributeLayout();
+        this.ckAttributeTypeHandle = ckAttributeLayout.varHandle(MemoryLayout.PathElement.groupElement("type"));
+        this.ckAttributePValueHandle = ckAttributeLayout.varHandle(MemoryLayout.PathElement.groupElement("pValue"));
+        this.ckAttributeValueLenHandle = ckAttributeLayout.varHandle(MemoryLayout.PathElement.groupElement("valueLen"));
     }
 
     /**
@@ -250,6 +276,42 @@ public abstract class Template {
     }
 
     /**
+     * Get the CK_ATTRIBUTE layout.
+     *
+     * @return Group layout
+     */
+    public GroupLayout getCkAttributeLayout() {
+        return ckAttributeLayout;
+    }
+
+    /**
+     * Get the CK_ATTRIBUTE type var handle.
+     *
+     * @return Var handle
+     */
+    public VarHandle getCkAttributeTypeHandle() {
+        return ckAttributeTypeHandle;
+    }
+
+    /**
+     * Get the CK_ATTRIBUTE pValue var handle.
+     *
+     * @return Var handle
+     */
+    public VarHandle getCkAttributePValueHandle() {
+        return ckAttributePValueHandle;
+    }
+
+    /**
+     * Get the CK_ATTRIBUTE valueLen var handle.
+     *
+     * @return Var handle
+     */
+    public VarHandle getCkAttributeValueLenHandle() {
+        return ckAttributeValueLenHandle;
+    }
+
+    /**
      * Get the platform/architecture specific long value, mostly 4 or 8 bytes. A 4 byte has to be casted to a long.
      *
      * @param memorySegment Allocated memory segment
@@ -293,4 +355,11 @@ public abstract class Template {
      * @return Specific CK_SESSION_INFO group layout
      */
     protected abstract GroupLayout buildCkSessionInfoLayout();
+
+    /**
+     * Build the platform/architecture specific CK_ATTRIBUTE group layout.
+     *
+     * @return Specific CK_ATTRIBUTE group layout
+     */
+    protected abstract GroupLayout buildCkAttributeLayout();
 }

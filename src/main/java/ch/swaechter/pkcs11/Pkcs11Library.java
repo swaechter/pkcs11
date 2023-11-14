@@ -232,6 +232,49 @@ public class Pkcs11Library {
     }
 
     /**
+     * Initializes an object search operation.
+     *
+     * @param sessionId                 ID of the session
+     * @param ckAttributeSearchTemplate Search template
+     * @throws Pkcs11Exception Thrown if the session does not exist or the search operation can't be initialized
+     */
+    public void C_FindObjectsInit(long sessionId, List<CkAttributeValue> ckAttributeSearchTemplate) throws Pkcs11Exception {
+        try (Arena arena = Arena.ofConfined()) {
+            // Invoke the function
+            FindObjectsInitFunction function = new FindObjectsInitFunction(linker, loaderLookup, template);
+            function.invokeFunction(arena, sessionId, ckAttributeSearchTemplate);
+        }
+    }
+
+    /**
+     * Continues an object search operation.
+     *
+     * @param sessionId  ID of the session
+     * @param maxObjects Maximum number of object handles returned
+     * @return Found object handles
+     * @throws Pkcs11Exception Thrown if the session does not exist or the search operation can't succeed
+     */
+    public List<Long> C_FindObjects(long sessionId, int maxObjects) throws Pkcs11Exception {
+        try (Arena arena = Arena.ofConfined()) {
+            // Invoke the function
+            FindObjectsFunction function = new FindObjectsFunction(linker, loaderLookup, template);
+            return function.invokeFunction(arena, sessionId, maxObjects);
+        }
+    }
+
+    /**
+     * Finishes an object search operation.
+     *
+     * @param sessionId ID of the session
+     * @throws Pkcs11Exception Thrown if the session does not exist or the search operation can't be finalized
+     */
+    public void C_FindObjectsFinal(long sessionId) throws Pkcs11Exception {
+        // Invoke the function
+        FindObjectsFinalFunction function = new FindObjectsFinalFunction(linker, loaderLookup, template);
+        function.invokeFunction(sessionId);
+    }
+
+    /**
      * Mix in additional seed material to the random number generator.
      *
      * @param sessionId ID of the session
