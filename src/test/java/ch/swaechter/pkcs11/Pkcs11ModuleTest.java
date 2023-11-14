@@ -9,6 +9,7 @@ import ch.swaechter.pkcs11.templates.Template;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -166,6 +167,44 @@ public class Pkcs11ModuleTest {
 
             // Finalize the module explicitly. The try-with-resource won't finalize the module another time
             pkcs11Module.finalizeModule();
+        }
+    }
+
+    @Test
+    public void testRandom() throws Exception {
+        // Create the template
+        Template template = Template.detectTemplate();
+        assertTrue(template instanceof PackedWindowsTemplate || template instanceof AlignedLinuxTemplate);
+
+        try (Pkcs11Module pkcs11Module = new Pkcs11Module(Pkcs11Template.LIBRARY_NAME, template)) {
+            // Initialize the module
+            pkcs11Module.initializeModule();
+
+            // Get all slots
+            List<Pkcs11Slot> pkcs11Slots = pkcs11Module.getSlots(true, 10);
+            assertEquals(1, pkcs11Slots.size());
+            Pkcs11Slot pkcs11Slot = pkcs11Slots.get(0);
+
+            // Open a session
+            try (Pkcs11Session pkcs11Session = pkcs11Slot.getToken().openSession(true, true)) {
+                // Generate a first 100 byte random buffer
+                byte[] firstRandomBuffer = pkcs11Session.generateRandom(100);
+                assertNotNull(firstRandomBuffer);
+                assertEquals(100, firstRandomBuffer.length);
+                assertFalse(Pkcs11Utils.isEmptyByteArray(firstRandomBuffer));
+
+                // Generate a second 100 byte random buffer
+                byte[] secondRandomBuffer = pkcs11Session.generateRandom(100);
+                assertNotNull(secondRandomBuffer);
+                assertEquals(100, secondRandomBuffer.length);
+                assertFalse(Pkcs11Utils.isEmptyByteArray(secondRandomBuffer));
+
+                // Ensure they are not the same
+                assertFalse(Arrays.equals(firstRandomBuffer, secondRandomBuffer));
+
+                // Seed the RNG with the second buffer
+                pkcs11Session.seedRandom(secondRandomBuffer);
+            }
         }
     }
 }

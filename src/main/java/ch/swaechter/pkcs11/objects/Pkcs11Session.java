@@ -82,6 +82,29 @@ public class Pkcs11Session implements Closeable {
     }
 
     /**
+     * Mix in additional seed material to the random number generator.
+     *
+     * @param seed Additional seed material
+     * @throws Pkcs11Exception Thrown if the random number generator can't be seeded
+     */
+    public void seedRandom(byte[] seed) throws Pkcs11Exception {
+        // Seed the random number generator
+        pkcs11Library.C_SeedRandom(sessionId, seed);
+    }
+
+    /**
+     * Generates random data for the given length.
+     *
+     * @param length Length of the random data
+     * @return Random date with the length
+     * @throws Pkcs11Exception Thrown if the random data can't be generated
+     */
+    public byte[] generateRandom(int length) throws Pkcs11Exception {
+        // Generate random data
+        return pkcs11Library.C_GenerateRandom(sessionId, length);
+    }
+
+    /**
      * The session supports the try-with-resource statement. A caller can create the session via try and close will
      * automatically close the session, even when an exception is thrown after opening it.
      */

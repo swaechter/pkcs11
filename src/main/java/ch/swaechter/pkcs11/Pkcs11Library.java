@@ -230,4 +230,35 @@ public class Pkcs11Library {
         LogoutFunction function = new LogoutFunction(linker, loaderLookup, template);
         function.invokeFunction(sessionId);
     }
+
+    /**
+     * Mix in additional seed material to the random number generator.
+     *
+     * @param sessionId ID of the session
+     * @param seed      Additional seed material
+     * @throws Pkcs11Exception Thrown if the random number generator can't be seeded
+     */
+    public void C_SeedRandom(long sessionId, byte[] seed) throws Pkcs11Exception {
+        try (Arena arena = Arena.ofConfined()) {
+            // Invoke the function
+            SeedRandomFunction function = new SeedRandomFunction(linker, loaderLookup, template);
+            function.invokeFunction(arena, sessionId, seed);
+        }
+    }
+
+    /**
+     * Generates random data for the given length.
+     *
+     * @param sessionId ID of the session
+     * @param length    Length of the random data
+     * @return Random date with the length
+     * @throws Pkcs11Exception Thrown if the random data can't be generated
+     */
+    public byte[] C_GenerateRandom(long sessionId, int length) throws Pkcs11Exception {
+        try (Arena arena = Arena.ofConfined()) {
+            // Invoke the function
+            GenerateRandomFunction function = new GenerateRandomFunction(linker, loaderLookup, template);
+            return function.invokeFunction(arena, sessionId, length);
+        }
+    }
 }

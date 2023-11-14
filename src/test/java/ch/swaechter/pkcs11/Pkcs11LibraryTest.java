@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -20,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public class Pkcs11LibraryTest {
 
-    private static Pkcs11Library pkcs11LowLevel;
+    private static Pkcs11Library pkcs11Library;
 
     @BeforeAll
     public static void initializePkcs11LowLevel() throws Pkcs11Exception {
@@ -29,22 +30,22 @@ public class Pkcs11LibraryTest {
         assertTrue(template instanceof PackedWindowsTemplate || template instanceof AlignedLinuxTemplate);
 
         // Create the client
-        pkcs11LowLevel = new Pkcs11Library(Pkcs11Template.LIBRARY_NAME, template);
+        pkcs11Library = new Pkcs11Library(Pkcs11Template.LIBRARY_NAME, template);
 
         // Initialize the PKCS11 middleware
-        pkcs11LowLevel.C_Initialize();
+        pkcs11Library.C_Initialize();
     }
 
     @AfterAll
     public static void finalizePkcs11LowLevel() throws Pkcs11Exception {
         // Finalize the PKCS11 middleware
-        pkcs11LowLevel.C_Finalize();
+        pkcs11Library.C_Finalize();
     }
 
     @Test
     public void testGetInfo() throws Pkcs11Exception {
         // Get the information
-        CkInfo ckInfo = pkcs11LowLevel.C_GetInfo();
+        CkInfo ckInfo = pkcs11Library.C_GetInfo();
 
         // Check the information
         CkVersion cryptokiVersion = ckInfo.cryptokiVersion();
@@ -64,7 +65,7 @@ public class Pkcs11LibraryTest {
         // Get the slot list
         boolean tokenPresent = true;
         int maxSlots = 100;
-        List<Long> slotIds = pkcs11LowLevel.C_GetSlotList(tokenPresent, maxSlots);
+        List<Long> slotIds = pkcs11Library.C_GetSlotList(tokenPresent, maxSlots);
         assertEquals(1, slotIds.size());
         assertEquals(0, slotIds.get(0));
     }
@@ -74,7 +75,7 @@ public class Pkcs11LibraryTest {
         // Get the slot list
         boolean tokenPresent = true;
         int maxSlots = 100;
-        List<Long> slotIds = pkcs11LowLevel.C_GetSlotList(tokenPresent, maxSlots);
+        List<Long> slotIds = pkcs11Library.C_GetSlotList(tokenPresent, maxSlots);
         assertEquals(1, slotIds.size());
         assertEquals(0, slotIds.get(0));
 
@@ -84,7 +85,7 @@ public class Pkcs11LibraryTest {
             assertTrue(slotId >= 0);
 
             // Get the slot information
-            CkSlotInfo ckSlotInfo = pkcs11LowLevel.C_GetSlotInfo(slotId);
+            CkSlotInfo ckSlotInfo = pkcs11Library.C_GetSlotInfo(slotId);
             assertTrue(ckSlotInfo.slotDescription().equals("SafeNet Token JC 0                                              ") || ckSlotInfo.slotDescription().equals("SafeNet eToken 5100 [eToken 5110 SC] 00 00                      "));
             assertEquals("SafeNet, Inc.                   ", ckSlotInfo.manufacturerId());
             assertEquals(7, ckSlotInfo.flags());
@@ -104,7 +105,7 @@ public class Pkcs11LibraryTest {
         // Get the slot list
         boolean tokenPresent = true;
         int maxSlots = 100;
-        List<Long> slotIds = pkcs11LowLevel.C_GetSlotList(tokenPresent, maxSlots);
+        List<Long> slotIds = pkcs11Library.C_GetSlotList(tokenPresent, maxSlots);
         assertEquals(1, slotIds.size());
         assertEquals(0, slotIds.get(0));
 
@@ -114,7 +115,7 @@ public class Pkcs11LibraryTest {
             assertTrue(slotId >= 0);
 
             // Get the token information
-            CkTokenInfo ckTokenInfo = pkcs11LowLevel.C_GetTokenInfo(slotId);
+            CkTokenInfo ckTokenInfo = pkcs11Library.C_GetTokenInfo(slotId);
             assertEquals("Secacon Gygli Engineering GmbH  ", ckTokenInfo.label());
             assertEquals("SafeNet, Inc.                   ", ckTokenInfo.manufacturerId());
             assertEquals("eToken          ", ckTokenInfo.model());
@@ -149,21 +150,21 @@ public class Pkcs11LibraryTest {
         long sessionInfoFlags = CkSessionInfoFlag.CKF_RW_SESSION.value | CkSessionInfoFlag.CKF_SERIAL_SESSION.value;
 
         // Open a new session
-        long sessionId = pkcs11LowLevel.C_OpenSession(slotId, sessionInfoFlags);
+        long sessionId = pkcs11Library.C_OpenSession(slotId, sessionInfoFlags);
         assertTrue(sessionId > 0);
 
         // Get the session information
-        CkSessionInfo ckSessionInfo = pkcs11LowLevel.C_GetSessionInfo(sessionId);
+        CkSessionInfo ckSessionInfo = pkcs11Library.C_GetSessionInfo(sessionId);
         assertEquals(slotId, ckSessionInfo.slotId());
         assertEquals(CkSessionState.CKS_RW_PUBLIC_SESSION, ckSessionInfo.state());
         assertEquals(6, ckSessionInfo.flags());
         assertEquals(0, ckSessionInfo.deviceError());
 
         // Close the session
-        pkcs11LowLevel.C_CloseSession(sessionId);
+        pkcs11Library.C_CloseSession(sessionId);
 
         // Close all sessions for the slot
-        pkcs11LowLevel.C_CloseAllSessions(slotId);
+        pkcs11Library.C_CloseAllSessions(slotId);
     }
 
     @Test
@@ -173,22 +174,53 @@ public class Pkcs11LibraryTest {
         long sessionInfoFlags = CkSessionInfoFlag.CKF_RW_SESSION.value | CkSessionInfoFlag.CKF_SERIAL_SESSION.value;
 
         // Open a new session
-        long sessionId = pkcs11LowLevel.C_OpenSession(slotId, sessionInfoFlags);
+        long sessionId = pkcs11Library.C_OpenSession(slotId, sessionInfoFlags);
         assertTrue(sessionId > 0);
 
         // Login and logout as user
-        pkcs11LowLevel.C_Login(sessionId, CkUserType.CKU_USER, Pkcs11Template.PKCS11_TOKEN_PIN);
-        pkcs11LowLevel.C_Logout(sessionId);
+        pkcs11Library.C_Login(sessionId, CkUserType.CKU_USER, Pkcs11Template.PKCS11_TOKEN_PIN);
+        pkcs11Library.C_Logout(sessionId);
 
         // Login and logout as security officer
-        pkcs11LowLevel.C_Login(sessionId, CkUserType.CKU_SO, Pkcs11Template.PKCS11_TOKEN_SO_PIN);
-        pkcs11LowLevel.C_Logout(sessionId);
+        pkcs11Library.C_Login(sessionId, CkUserType.CKU_SO, Pkcs11Template.PKCS11_TOKEN_SO_PIN);
+        pkcs11Library.C_Logout(sessionId);
 
         // Try to log in via protected authentication path
-        Pkcs11Exception pkcs11Exception = assertThrows(Pkcs11Exception.class, () -> pkcs11LowLevel.C_Login(sessionId, CkUserType.CKU_SO, null));
+        Pkcs11Exception pkcs11Exception = assertThrows(Pkcs11Exception.class, () -> pkcs11Library.C_Login(sessionId, CkUserType.CKU_SO, null));
         assertTrue(pkcs11Exception.getMessage().contains("C_Login failed"));
 
         // Close the session
-        pkcs11LowLevel.C_CloseSession(sessionId);
+        pkcs11Library.C_CloseSession(sessionId);
+    }
+
+    @Test
+    public void testRandom() throws Pkcs11Exception {
+        // Define the values
+        long slotId = 0;
+        long sessionInfoFlags = CkSessionInfoFlag.CKF_RW_SESSION.value | CkSessionInfoFlag.CKF_SERIAL_SESSION.value;
+
+        // Open a new session
+        long sessionId = pkcs11Library.C_OpenSession(slotId, sessionInfoFlags);
+
+        // Generate a first 100 byte random buffer
+        byte[] firstRandomBuffer = pkcs11Library.C_GenerateRandom(sessionId, 100);
+        assertNotNull(firstRandomBuffer);
+        assertEquals(100, firstRandomBuffer.length);
+        assertFalse(Pkcs11Utils.isEmptyByteArray(firstRandomBuffer));
+
+        // Generate a second 100 byte random buffer
+        byte[] secondRandomBuffer = pkcs11Library.C_GenerateRandom(sessionId, 100);
+        assertNotNull(secondRandomBuffer);
+        assertEquals(100, secondRandomBuffer.length);
+        assertFalse(Pkcs11Utils.isEmptyByteArray(secondRandomBuffer));
+
+        // Ensure they are not the same
+        assertFalse(Arrays.equals(firstRandomBuffer, secondRandomBuffer));
+
+        // Seed the RNG with the second buffer
+        pkcs11Library.C_SeedRandom(sessionId, secondRandomBuffer);
+
+        // Close the session
+        pkcs11Library.C_CloseSession(sessionId);
     }
 }
