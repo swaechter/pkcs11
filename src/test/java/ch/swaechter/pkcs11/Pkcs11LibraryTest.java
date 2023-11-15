@@ -248,6 +248,44 @@ public class Pkcs11LibraryTest {
     }
 
     @Test
+    public void testSigning() throws Pkcs11Exception {
+        // Define the values
+        long slotId = 0;
+        long sessionInfoFlags = CkSessionInfoFlag.CKF_RW_SESSION.value | CkSessionInfoFlag.CKF_SERIAL_SESSION.value;
+        int maxObjects = 10;
+        byte[] message = "Message to sign!".getBytes(StandardCharsets.UTF_8);
+
+        // Open a new session
+        long sessionId = pkcs11Library.C_OpenSession(slotId, sessionInfoFlags);
+
+        // Login as user
+        pkcs11Library.C_Login(sessionId, CkUserType.CKU_USER, Pkcs11Template.PKCS11_TOKEN_PIN);
+
+        // Define the private key find object template
+        List<CkAttributeValue> ckAttributeSearchTemplate = new ArrayList<>();
+        ckAttributeSearchTemplate.add(new CkAttributeValue(CkAttribute.CKA_CLASS, CkObjectClass.CKO_PRIVATE_KEY.value));
+
+        // Start the private key object finding
+        pkcs11Library.C_FindObjectsInit(sessionId, ckAttributeSearchTemplate);
+
+        // Search the objects
+        List<Long> objectHandles = pkcs11Library.C_FindObjects(sessionId, maxObjects);
+        assertEquals(1, objectHandles.size());
+        assertTrue(objectHandles.contains(43450373L) || objectHandles.contains(206635013L));
+        long keyHandleId = objectHandles.get(0);
+
+        // Finalize the object search
+        pkcs11Library.C_FindObjectsFinal(sessionId);
+
+        // Initialize the signing
+        pkcs11Library.C_SignInit(sessionId, CkMechanism.CKM_SHA256_RSA_PKCS, keyHandleId);
+
+        // Sign the message
+        byte[] signedMessage = pkcs11Library.C_Sign(sessionId, message, 1000);
+        assertFalse(Pkcs11Utils.isEmptyByteArray(signedMessage));
+    }
+
+    @Test
     public void testRandom() throws Pkcs11Exception {
         // Define the values
         long slotId = 0;

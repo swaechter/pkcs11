@@ -102,6 +102,26 @@ public abstract class Template {
     private final VarHandle ckAttributeValueLenHandle;
 
     /**
+     * CK_MECHANISM group layout.
+     */
+    private final GroupLayout ckMechanismLayout;
+
+    /**
+     * CK_MECHANISM mechanism var handle.
+     */
+    private final VarHandle ckMechanismMechanismHandle;
+
+    /**
+     * CK_MECHANISM pParameter var handle.
+     */
+    private final VarHandle ckMechanismPParameterHandle;
+
+    /**
+     * CK_MECHANISM parameterLen var handle.
+     */
+    private final VarHandle ckMechanismParameterLenHandle;
+
+    /**
      * Create a new template and initialize all group layouts and var handles.
      */
     public Template() {
@@ -133,6 +153,12 @@ public abstract class Template {
         this.ckAttributeTypeHandle = ckAttributeLayout.varHandle(MemoryLayout.PathElement.groupElement("type"));
         this.ckAttributePValueHandle = ckAttributeLayout.varHandle(MemoryLayout.PathElement.groupElement("pValue"));
         this.ckAttributeValueLenHandle = ckAttributeLayout.varHandle(MemoryLayout.PathElement.groupElement("valueLen"));
+
+        // Build the mechanism layout and handles
+        this.ckMechanismLayout = buildCkMechanismLayout();
+        this.ckMechanismMechanismHandle = ckMechanismLayout.varHandle(MemoryLayout.PathElement.groupElement("mechanism"));
+        this.ckMechanismPParameterHandle = ckMechanismLayout.varHandle(MemoryLayout.PathElement.groupElement("pParameter"));
+        this.ckMechanismParameterLenHandle = ckMechanismLayout.varHandle(MemoryLayout.PathElement.groupElement("parameterLen"));
     }
 
     /**
@@ -313,6 +339,42 @@ public abstract class Template {
     }
 
     /**
+     * Get the CK_MECHANISM layout.
+     *
+     * @return Group layout
+     */
+    public GroupLayout getCkMechanismLayout() {
+        return ckMechanismLayout;
+    }
+
+    /**
+     * Get the CK_MECHANISM mechanism var handle.
+     *
+     * @return Var handle
+     */
+    public VarHandle getCkMechanismMechanismHandle() {
+        return ckMechanismMechanismHandle;
+    }
+
+    /**
+     * Get the CK_MECHANISM pParameter var handle.
+     *
+     * @return Var handle
+     */
+    public VarHandle getCkMechanismPParameterHandle() {
+        return ckMechanismPParameterHandle;
+    }
+
+    /**
+     * Get the CK_MECHANISM parameterLen var handle.
+     *
+     * @return Var handle
+     */
+    public VarHandle getCkMechanismParameterLenHandle() {
+        return ckMechanismParameterLenHandle;
+    }
+
+    /**
      * Allocate a long without a value.
      *
      * @param arena Memory arena
@@ -406,4 +468,11 @@ public abstract class Template {
      * @return Specific CK_ATTRIBUTE group layout
      */
     protected abstract GroupLayout buildCkAttributeLayout();
+
+    /**
+     * Build the platform/architecture specific CK_MECHANISM group layout.
+     *
+     * @return Specific CK_MECHANISM group layout
+     */
+    protected abstract GroupLayout buildCkMechanismLayout();
 }

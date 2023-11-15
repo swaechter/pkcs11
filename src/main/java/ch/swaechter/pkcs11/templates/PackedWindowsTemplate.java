@@ -154,4 +154,16 @@ public class PackedWindowsTemplate extends Template {
             JAVA_INT_UNALIGNED.withName("valueLen")
         ).withName("CK_ATTRIBUTE");
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected GroupLayout buildCkMechanismLayout() {
+        return MemoryLayout.structLayout(
+            JAVA_INT_UNALIGNED.withName("mechanism"),
+            ADDRESS_UNALIGNED.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)).withName("pParameter"),
+            JAVA_INT_UNALIGNED.withName("parameterLen")
+        ).withName("CK_MECHANISM");
+    }
 }

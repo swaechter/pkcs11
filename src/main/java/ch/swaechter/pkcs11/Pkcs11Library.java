@@ -275,6 +275,39 @@ public class Pkcs11Library {
     }
 
     /**
+     * Initializes a signature operation.
+     *
+     * @param sessionId   ID of the session
+     * @param ckMechanism ID of the mechanism
+     * @param keyHandleId ID of the key handle
+     * @throws Pkcs11Exception Thrown if the session does not exist or the sign init operation can't succeed
+     */
+    public void C_SignInit(long sessionId, CkMechanism ckMechanism, long keyHandleId) throws Pkcs11Exception {
+        try (Arena arena = Arena.ofConfined()) {
+            // Invoke the function
+            SignInitFunction function = new SignInitFunction(linker, loaderLookup, template);
+            function.invokeFunction(arena, sessionId, ckMechanism, keyHandleId);
+        }
+    }
+
+    /**
+     * Sign single-part data.
+     *
+     * @param sessionId     ID of the session
+     * @param message       Message to sign
+     * @param signatureSize Size of the signature buffer
+     * @return Signed message
+     * @throws Pkcs11Exception Thrown if the session does not exist or the sign operation can't succeed
+     */
+    public byte[] C_Sign(long sessionId, byte[] message, int signatureSize) throws Pkcs11Exception {
+        try (Arena arena = Arena.ofConfined()) {
+            // Invoke the function
+            SignFunction function = new SignFunction(linker, loaderLookup, template);
+            return function.invokeFunction(arena, sessionId, message, signatureSize);
+        }
+    }
+
+    /**
      * Mix in additional seed material to the random number generator.
      *
      * @param sessionId ID of the session

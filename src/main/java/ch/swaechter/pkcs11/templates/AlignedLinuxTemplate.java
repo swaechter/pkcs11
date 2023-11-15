@@ -158,4 +158,18 @@ public class AlignedLinuxTemplate extends Template {
             JAVA_LONG.withName("valueLen")
         ).withName("CK_ATTRIBUTE");
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected GroupLayout buildCkMechanismLayout() {
+        return MemoryLayout.structLayout(
+            JAVA_INT.withName("mechanism"),
+            MemoryLayout.paddingLayout(4),
+            ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)).withName("pParameter"),
+            JAVA_INT.withName("parameterLen"),
+            MemoryLayout.paddingLayout(4)
+        ).withName("CK_MECHANISM");
+    }
 }
