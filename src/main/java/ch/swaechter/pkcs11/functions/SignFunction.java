@@ -44,7 +44,7 @@ public class SignFunction extends AbstractFunction {
             // Allocate an array with the message
             MemorySegment messageMemorySegment = arena.allocateArray(JAVA_BYTE, message);
 
-            // Allocate an array with the signed data
+            // Allocate an array for the signed data and a pointer for the signature length
             MemorySegment signedDataMemorySegment = arena.allocateArray(JAVA_BYTE, signatureSize);
             MemorySegment signedDataLengthMemorySegment = getTemplate().allocateLong(arena, signedDataMemorySegment.byteSize());
 
@@ -57,9 +57,9 @@ public class SignFunction extends AbstractFunction {
             }
 
             // Return the signed message
-            long signedMessageLength = getTemplate().getLong(signedDataLengthMemorySegment);
+            int signedMessageLength = (int) getTemplate().getLong(signedDataLengthMemorySegment);
             byte[] signedMessage = getBytes(signedDataMemorySegment);
-            return Arrays.copyOf(signedMessage, (int) signedMessageLength);
+            return Arrays.copyOf(signedMessage, signedMessageLength);
         } catch (Throwable throwable) {
             throw new Pkcs11Exception("C_Sign failed: " + throwable.getMessage(), throwable);
         }
