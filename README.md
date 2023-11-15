@@ -24,6 +24,12 @@ This library was heavily influenced by documentation and design of these project
 * IAIK from TU Graz: https://jce.iaik.tugraz.at/
 * Pkcs11Interop from Jaroslav Imrich: https://pkcs11interop.net/
 
+The following resources were used:
+
+* https://docs.oasis-open.org/pkcs11/pkcs11-base/v2.40/pkcs11-base-v2.40.html
+* https://docs.oasis-open.org/pkcs11/pkcs11-curr/v2.40/cs01/pkcs11-curr-v2.40-cs01.html
+* https://raw.githubusercontent.com/PeculiarVentures/webcrypto-local/master/errors/PKCS11.md
+
 ## License
 
 This project is licensed under the MIT license:

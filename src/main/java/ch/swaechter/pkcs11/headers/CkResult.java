@@ -5,7 +5,6 @@ package ch.swaechter.pkcs11.headers;
  *
  * @author Simon Wächter
  */
-// Source: https://raw.githubusercontent.com/PeculiarVentures/webcrypto-local/master/errors/PKCS11.md
 public enum CkResult {
 
     CKR_OK(0x00000000, "The function executed successfully."),
