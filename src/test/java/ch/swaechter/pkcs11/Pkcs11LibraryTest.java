@@ -195,7 +195,7 @@ public class Pkcs11LibraryTest {
     }
 
     @Test
-    public void testFindObjects() throws Pkcs11Exception {
+    public void testObjects() throws Pkcs11Exception {
         // Define the values
         long slotId = 0;
         long sessionInfoFlags = CkSessionInfoFlag.CKF_RW_SESSION.value | CkSessionInfoFlag.CKF_SERIAL_SESSION.value;
@@ -219,6 +219,10 @@ public class Pkcs11LibraryTest {
         assertEquals(1, objectHandles.size());
         assertTrue(objectHandles.contains(43450373L) || objectHandles.contains(206635013L));
 
+        // Get the object size
+        long objectSize = pkcs11Library.C_GetObjectSize(sessionId, objectHandles.get(0));
+        assertEquals(62, objectSize);
+
         // Finalize the object search
         pkcs11Library.C_FindObjectsFinal(sessionId);
 
@@ -236,6 +240,12 @@ public class Pkcs11LibraryTest {
         assertTrue(objectHandles.contains(236257286L) || objectHandles.contains(218038278L));
         assertTrue(objectHandles.contains(11337735L) || objectHandles.contains(71958535L));
         assertTrue(objectHandles.contains(236781576L) || objectHandles.contains(149684232L));
+
+        // Get the object sizes
+        for (long objectHandle : objectHandles) {
+            objectSize = pkcs11Library.C_GetObjectSize(sessionId, objectHandle);
+            assertTrue(objectSize > 1300 && objectSize < 2000);
+        }
 
         // Finalize the object search
         pkcs11Library.C_FindObjectsFinal(sessionId);

@@ -232,6 +232,22 @@ public class Pkcs11Library {
     }
 
     /**
+     * Obtains the size of an object in bytes.
+     *
+     * @param sessionId      ID of the session
+     * @param objectHandleId ID of the object handle
+     * @return Size of the object
+     * @throws Pkcs11Exception Thrown if the session/object does not exist or can't be read
+     */
+    public long C_GetObjectSize(long sessionId, long objectHandleId) throws Pkcs11Exception {
+        try (Arena arena = Arena.ofConfined()) {
+            // Invoke the function
+            GetObjectSizeFunction function = new GetObjectSizeFunction(linker, loaderLookup, template);
+            return function.invokeFunction(arena, sessionId, objectHandleId);
+        }
+    }
+
+    /**
      * Initializes an object search operation.
      *
      * @param sessionId                 ID of the session
