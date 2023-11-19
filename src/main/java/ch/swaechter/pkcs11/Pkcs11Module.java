@@ -143,6 +143,24 @@ public class Pkcs11Module implements Closeable {
     }
 
     /**
+     * Get a specific slot.
+     *
+     * @param slotId ID of the slot
+     * @return Slot
+     * @throws Pkcs11Exception Thrown if the slot does not exist or can't be read
+     */
+    public Pkcs11Slot getSlot(long slotId) throws Pkcs11Exception {
+        // Ensure is initialized
+        ensureIsInitialized(false);
+
+        // Get the slot info for the slot to ensure it exists
+        pkcs11Library.C_GetSlotInfo(slotId);
+
+        // Return the slot
+        return new Pkcs11Slot(pkcs11Library, slotId);
+    }
+
+    /**
      * The module supports the try-with-resource statement. A caller can create the module via try, initialize it and
      * close will automatically finalize, even when an exception is thrown after the initialization.
      */

@@ -27,6 +27,7 @@ public class Pkcs11ModuleTest {
         Template template = Template.detectTemplate();
         assertTrue(template instanceof PackedWindowsTemplate || template instanceof AlignedLinuxTemplate);
 
+        // Work with the module
         try (Pkcs11Module pkcs11Module = new Pkcs11Module(Pkcs11Template.LIBRARY_NAME, template)) {
             // Ensure the PKCS11 client is not initialized
             Assertions.assertFalse(pkcs11Module.isInitialized());
@@ -59,6 +60,9 @@ public class Pkcs11ModuleTest {
             for (Pkcs11Slot pkcs11Slot : pkcs11Slots) {
                 // Check the slot
                 assertEquals(0, pkcs11Slot.getSlotId());
+
+                // Get the slot
+                pkcs11Module.getSlot(pkcs11Slot.getSlotId());
 
                 // Get the slot info
                 Pkcs11SlotInfo pkcs11SlotInfo = pkcs11Slot.getSlotInfo();
@@ -176,6 +180,7 @@ public class Pkcs11ModuleTest {
         Template template = Template.detectTemplate();
         assertTrue(template instanceof PackedWindowsTemplate || template instanceof AlignedLinuxTemplate);
 
+        // Work with the module
         try (Pkcs11Module pkcs11Module = new Pkcs11Module(Pkcs11Template.LIBRARY_NAME, template)) {
             // Initialize the module
             pkcs11Module.initializeModule();
