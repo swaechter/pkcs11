@@ -1,5 +1,6 @@
 package ch.swaechter.pkcs11.objects;
 
+import ch.swaechter.pkcs11.Pkcs11Container;
 import ch.swaechter.pkcs11.Pkcs11Exception;
 import ch.swaechter.pkcs11.Pkcs11Library;
 import ch.swaechter.pkcs11.headers.CkAttributeValue;
@@ -16,12 +17,7 @@ import java.util.List;
  *
  * @author Simon Wächter
  */
-public class Pkcs11Session implements Closeable {
-
-    /**
-     * PKCS11 library to access the middleware.
-     */
-    private final Pkcs11Library pkcs11Library;
+public class Pkcs11Session extends Pkcs11Container implements Closeable {
 
     /**
      * ID of the session.
@@ -35,7 +31,7 @@ public class Pkcs11Session implements Closeable {
      * @param sessionId     ID of the session
      */
     public Pkcs11Session(Pkcs11Library pkcs11Library, long sessionId) {
-        this.pkcs11Library = pkcs11Library;
+        super(pkcs11Library);
         this.sessionId = sessionId;
     }
 
@@ -56,7 +52,7 @@ public class Pkcs11Session implements Closeable {
      */
     public Pkcs11SessionInfo getSessionInfo() throws Pkcs11Exception {
         // Get the session info
-        CkSessionInfo ckSessionInfo = pkcs11Library.C_GetSessionInfo(sessionId);
+        CkSessionInfo ckSessionInfo = getPkcs11Library().C_GetSessionInfo(sessionId);
 
         // Return the session info
         return new Pkcs11SessionInfo(ckSessionInfo);
@@ -71,7 +67,7 @@ public class Pkcs11Session implements Closeable {
      */
     public void loginUser(CkUserType ckUserType, String pinOrPuk) throws Pkcs11Exception {
         // Login the user
-        pkcs11Library.C_Login(sessionId, ckUserType, pinOrPuk);
+        getPkcs11Library().C_Login(sessionId, ckUserType, pinOrPuk);
     }
 
     /**
@@ -81,7 +77,7 @@ public class Pkcs11Session implements Closeable {
      */
     public void logoutUser() throws Pkcs11Exception {
         // Logout the user
-        pkcs11Library.C_Logout(sessionId);
+        getPkcs11Library().C_Logout(sessionId);
     }
 
     /**
@@ -118,13 +114,13 @@ public class Pkcs11Session implements Closeable {
             List<Long> allObjectIds = new ArrayList<>();
 
             // Initialize the object finding
-            pkcs11Library.C_FindObjectsInit(sessionId, searchTemplate);
+            getPkcs11Library().C_FindObjectsInit(sessionId, searchTemplate);
             findInitialized = true;
 
             // Search as long we find new objects/no empty array
             do {
                 // Find the current objects
-                currentObjectIds = pkcs11Library.C_FindObjects(sessionId, batchSize);
+                currentObjectIds = getPkcs11Library().C_FindObjects(sessionId, batchSize);
 
                 // Add the current objects
                 allObjectIds.addAll(currentObjectIds);
@@ -135,9 +131,22 @@ public class Pkcs11Session implements Closeable {
         } finally {
             // Finalize the object finding if required
             if (findInitialized) {
-                pkcs11Library.C_FindObjectsFinal(sessionId);
+                getPkcs11Library().C_FindObjectsFinal(sessionId);
             }
         }
+    }
+
+    /**
+     * Obtains an attribute value of an object.
+     *
+     * @param objectId   ID of the object
+     * @param attributes Attributes to read
+     * @return Attribute values
+     * @throws Pkcs11Exception Thrown if the object does not exist or the values can't be read
+     */
+    public List<byte[]> getAttributeValue(long objectId, List<CkAttributeValue> attributes) throws Pkcs11Exception {
+        // Get the attribute values
+        return getPkcs11Library().C_GetAttributeValue(sessionId, objectId, attributes);
     }
 
     /**
@@ -148,7 +157,7 @@ public class Pkcs11Session implements Closeable {
      */
     public void seedRandom(byte[] seed) throws Pkcs11Exception {
         // Seed the random number generator
-        pkcs11Library.C_SeedRandom(sessionId, seed);
+        getPkcs11Library().C_SeedRandom(sessionId, seed);
     }
 
     /**
@@ -160,7 +169,7 @@ public class Pkcs11Session implements Closeable {
      */
     public byte[] generateRandom(int length) throws Pkcs11Exception {
         // Generate random data
-        return pkcs11Library.C_GenerateRandom(sessionId, length);
+        return getPkcs11Library().C_GenerateRandom(sessionId, length);
     }
 
     /**
@@ -171,7 +180,7 @@ public class Pkcs11Session implements Closeable {
     public void close() throws IOException {
         try {
             // Close the session
-            pkcs11Library.C_CloseSession(sessionId);
+            getPkcs11Library().C_CloseSession(sessionId);
         } catch (Pkcs11Exception exception) {
             throw new IOException(exception.getMessage(), exception);
         }

@@ -15,12 +15,7 @@ import java.util.List;
  *
  * @author Simon Wächter
  */
-public class Pkcs11Module implements Closeable {
-
-    /**
-     * PKCS11 library to access the middleware.
-     */
-    private final Pkcs11Library pkcs11Library;
+public class Pkcs11Module extends Pkcs11Container implements Closeable {
 
     /**
      * Flag whether the PKCS11 module is initialized.
@@ -36,7 +31,7 @@ public class Pkcs11Module implements Closeable {
      */
     public Pkcs11Module(String libraryName, Template template) throws Pkcs11Exception {
         // Create the PKCS11 library
-        this.pkcs11Library = new Pkcs11Library(libraryName, template);
+        super(new Pkcs11Library(libraryName, template));
         this.initialized = false;
     }
 
@@ -61,7 +56,7 @@ public class Pkcs11Module implements Closeable {
         }
 
         // Initialize the module
-        pkcs11Library.C_Initialize();
+        getPkcs11Library().C_Initialize();
 
         // Mark as initialized
         initialized = true;
@@ -79,7 +74,7 @@ public class Pkcs11Module implements Closeable {
         }
 
         // Finalize the module
-        pkcs11Library.C_Finalize();
+        getPkcs11Library().C_Finalize();
 
         // Mark as finalized
         initialized = false;
@@ -112,7 +107,7 @@ public class Pkcs11Module implements Closeable {
         ensureIsInitialized(false);
 
         // Get the info
-        CkInfo ckInfo = pkcs11Library.C_GetInfo();
+        CkInfo ckInfo = getPkcs11Library().C_GetInfo();
 
         // Return the info
         return new Pkcs11Info(ckInfo);
@@ -131,12 +126,12 @@ public class Pkcs11Module implements Closeable {
         ensureIsInitialized(false);
 
         // Get the slots
-        List<Long> slotIds = pkcs11Library.C_GetSlotList(tokenPresent, maxSlots);
+        List<Long> slotIds = getPkcs11Library().C_GetSlotList(tokenPresent, maxSlots);
 
         // Return the slots
         List<Pkcs11Slot> pkcs11Slots = new ArrayList<>(slotIds.size());
         for (Long slotId : slotIds) {
-            Pkcs11Slot pkcs11Slot = new Pkcs11Slot(pkcs11Library, slotId);
+            Pkcs11Slot pkcs11Slot = new Pkcs11Slot(getPkcs11Library(), slotId);
             pkcs11Slots.add(pkcs11Slot);
         }
         return pkcs11Slots;
@@ -154,10 +149,10 @@ public class Pkcs11Module implements Closeable {
         ensureIsInitialized(false);
 
         // Get the slot info for the slot to ensure it exists
-        pkcs11Library.C_GetSlotInfo(slotId);
+        getPkcs11Library().C_GetSlotInfo(slotId);
 
         // Return the slot
-        return new Pkcs11Slot(pkcs11Library, slotId);
+        return new Pkcs11Slot(getPkcs11Library(), slotId);
     }
 
     /**

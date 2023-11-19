@@ -1,5 +1,6 @@
 package ch.swaechter.pkcs11.objects;
 
+import ch.swaechter.pkcs11.Pkcs11Container;
 import ch.swaechter.pkcs11.Pkcs11Exception;
 import ch.swaechter.pkcs11.Pkcs11Library;
 import ch.swaechter.pkcs11.headers.CkSlotInfo;
@@ -9,12 +10,7 @@ import ch.swaechter.pkcs11.headers.CkSlotInfo;
  *
  * @author Simon Wächter
  */
-public class Pkcs11Slot {
-
-    /**
-     * PKCS11 library to access the middleware.
-     */
-    private final Pkcs11Library pkcs11Library;
+public class Pkcs11Slot extends Pkcs11Container {
 
     /**
      * ID of the slot.
@@ -28,7 +24,7 @@ public class Pkcs11Slot {
      * @param slotId        ID of the slot
      */
     public Pkcs11Slot(Pkcs11Library pkcs11Library, long slotId) {
-        this.pkcs11Library = pkcs11Library;
+        super(pkcs11Library);
         this.slotId = slotId;
     }
 
@@ -49,7 +45,7 @@ public class Pkcs11Slot {
      */
     public Pkcs11SlotInfo getSlotInfo() throws Pkcs11Exception {
         // Get the slot info
-        CkSlotInfo ckSlotInfo = pkcs11Library.C_GetSlotInfo(slotId);
+        CkSlotInfo ckSlotInfo = getPkcs11Library().C_GetSlotInfo(slotId);
 
         // Return the slot info
         return new Pkcs11SlotInfo(ckSlotInfo);
@@ -62,6 +58,6 @@ public class Pkcs11Slot {
      */
     public Pkcs11Token getToken() {
         // Return the token
-        return new Pkcs11Token(pkcs11Library, slotId);
+        return new Pkcs11Token(getPkcs11Library(), slotId);
     }
 }

@@ -175,7 +175,7 @@ public class Pkcs11ModuleTest {
     }
 
     @Test
-    public void testObjects() throws Exception {
+    public void testObjectsAndSign() throws Exception {
         // Create the template
         Template template = Template.detectTemplate();
         assertTrue(template instanceof PackedWindowsTemplate || template instanceof AlignedLinuxTemplate);
@@ -206,6 +206,14 @@ public class Pkcs11ModuleTest {
                 assertTrue(certificateObjectIds.contains(236257286L) || certificateObjectIds.contains(218038278L));
                 assertTrue(certificateObjectIds.contains(11337735L) || certificateObjectIds.contains(71958535L));
                 assertTrue(certificateObjectIds.contains(236781576L) || certificateObjectIds.contains(149684232L));
+
+                // Read all certificate values
+                List<CkAttributeValue> certificateValueCkAttributeValues = new ArrayList<>();
+                certificateValueCkAttributeValues.add(new CkAttributeValue(CkAttribute.CKA_VALUE, null));
+                for (long certificateObjectId : certificateObjectIds) {
+                    List<byte[]> certificateAttributeValues = pkcs11Session.getAttributeValue(certificateObjectId, certificateValueCkAttributeValues);
+                    assertEquals(1, certificateAttributeValues.size());
+                }
 
                 // Logout
                 pkcs11Session.logoutUser();

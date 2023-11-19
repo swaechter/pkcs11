@@ -1,5 +1,6 @@
 package ch.swaechter.pkcs11.objects;
 
+import ch.swaechter.pkcs11.Pkcs11Container;
 import ch.swaechter.pkcs11.Pkcs11Exception;
 import ch.swaechter.pkcs11.Pkcs11Library;
 import ch.swaechter.pkcs11.headers.CkSessionInfoFlag;
@@ -10,12 +11,7 @@ import ch.swaechter.pkcs11.headers.CkTokenInfo;
  *
  * @author Simon Wächter
  */
-public class Pkcs11Token {
-
-    /**
-     * PKCS11 library to access the middleware.
-     */
-    private final Pkcs11Library pkcs11Library;
+public class Pkcs11Token extends Pkcs11Container {
 
     /**
      * ID of the slot.
@@ -29,7 +25,7 @@ public class Pkcs11Token {
      * @param slotId        ID of the slot
      */
     public Pkcs11Token(Pkcs11Library pkcs11Library, long slotId) {
-        this.pkcs11Library = pkcs11Library;
+        super(pkcs11Library);
         this.slotId = slotId;
     }
 
@@ -50,7 +46,7 @@ public class Pkcs11Token {
      */
     public Pkcs11TokenInfo getTokenInfo() throws Pkcs11Exception {
         // Get the token info
-        CkTokenInfo ckTokenInfo = pkcs11Library.C_GetTokenInfo(slotId);
+        CkTokenInfo ckTokenInfo = getPkcs11Library().C_GetTokenInfo(slotId);
 
         // Return the token info
         return new Pkcs11TokenInfo(ckTokenInfo);
@@ -71,10 +67,10 @@ public class Pkcs11Token {
         flags |= serialSession ? CkSessionInfoFlag.CKF_SERIAL_SESSION.value : 0L;
 
         // Open a new session
-        long sessionId = pkcs11Library.C_OpenSession(slotId, flags);
+        long sessionId = getPkcs11Library().C_OpenSession(slotId, flags);
 
         // Return the session
-        return new Pkcs11Session(pkcs11Library, sessionId);
+        return new Pkcs11Session(getPkcs11Library(), sessionId);
     }
 
     /**
@@ -84,7 +80,7 @@ public class Pkcs11Token {
      */
     public void closeAllSessions() throws Pkcs11Exception {
         // Close all sessions on the token
-        pkcs11Library.C_CloseAllSessions(slotId);
+        getPkcs11Library().C_CloseAllSessions(slotId);
     }
 
     /**

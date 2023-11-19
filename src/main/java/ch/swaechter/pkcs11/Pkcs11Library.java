@@ -248,6 +248,23 @@ public class Pkcs11Library {
     }
 
     /**
+     * Obtains an attribute value of an object.
+     *
+     * @param sessionId                 ID of the session
+     * @param objectHandleId            ID of the object handle
+     * @param ckAttributeSearchTemplate Search template
+     * @return Attribute values
+     * @throws Pkcs11Exception Thrown if the session/object do not exist or the attributes can't be read
+     */
+    public List<byte[]> C_GetAttributeValue(long sessionId, long objectHandleId, List<CkAttributeValue> ckAttributeSearchTemplate) throws Pkcs11Exception {
+        try (Arena arena = Arena.ofConfined()) {
+            // Invoke the function
+            GetAttributeFunction function = new GetAttributeFunction(linker, loaderLookup, template);
+            return function.invokeFunction(arena, sessionId, objectHandleId, ckAttributeSearchTemplate);
+        }
+    }
+
+    /**
      * Initializes an object search operation.
      *
      * @param sessionId                 ID of the session

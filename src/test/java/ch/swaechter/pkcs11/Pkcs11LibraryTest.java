@@ -250,6 +250,14 @@ public class Pkcs11LibraryTest {
         // Finalize the object search
         pkcs11Library.C_FindObjectsFinal(sessionId);
 
+        // Get the attributes
+        ckAttributeSearchTemplate.clear();
+        ckAttributeSearchTemplate.add(new CkAttributeValue(CkAttribute.CKA_VALUE, null));
+        List<byte[]> attributeValues = pkcs11Library.C_GetAttributeValue(sessionId, objectHandles.get(0), ckAttributeSearchTemplate);
+        for (byte[] attributeValue : attributeValues) {
+            System.out.println("Data: " + Arrays.toString(attributeValue));
+        }
+
         // Logout
         pkcs11Library.C_Logout(sessionId);
 
