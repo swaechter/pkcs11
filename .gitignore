@@ -5,3 +5,6 @@
 # IDE from JetBrains
 /.idea/
 /*.iml
+
+# Signed PDF files
+/src/test/resources/Document_Signed.pdf
