@@ -5,7 +5,6 @@ import ch.swaechter.pkcs11.objects.*;
 import ch.swaechter.pkcs11.templates.AlignedLinuxTemplate;
 import ch.swaechter.pkcs11.templates.PackedWindowsTemplate;
 import ch.swaechter.pkcs11.templates.Template;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -29,8 +28,11 @@ public class Pkcs11ModuleTest {
 
         // Work with the module
         try (Pkcs11Module pkcs11Module = new Pkcs11Module(Pkcs11Template.LIBRARY_NAME, template)) {
+            // Get the library
+            assertNotNull(pkcs11Module.getPkcs11Library());
+
             // Ensure the PKCS11 client is not initialized
-            Assertions.assertFalse(pkcs11Module.isInitialized());
+            assertFalse(pkcs11Module.isInitialized());
 
             // Initialize the module
             pkcs11Module.initializeModule();
@@ -51,9 +53,7 @@ public class Pkcs11ModuleTest {
             assertTrue(libraryVersion.minor() == 7 || libraryVersion.minor() == 8);
 
             // Get the slots
-            boolean tokenPresent = true;
-            int maxSlots = 100;
-            List<Pkcs11Slot> pkcs11Slots = pkcs11Module.getSlots(tokenPresent, maxSlots);
+            List<Pkcs11Slot> pkcs11Slots = pkcs11Module.getSlots(true);
             assertEquals(1, pkcs11Slots.size());
 
             // Iterate over all slots
@@ -233,7 +233,7 @@ public class Pkcs11ModuleTest {
             pkcs11Module.initializeModule();
 
             // Get all slots
-            List<Pkcs11Slot> pkcs11Slots = pkcs11Module.getSlots(true, 10);
+            List<Pkcs11Slot> pkcs11Slots = pkcs11Module.getSlots(true);
             assertEquals(1, pkcs11Slots.size());
             Pkcs11Slot pkcs11Slot = pkcs11Slots.get(0);
 

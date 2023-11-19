@@ -64,9 +64,7 @@ public class Pkcs11LibraryTest {
     @Test
     public void testGetSlotList() throws Pkcs11Exception {
         // Get the slot list
-        boolean tokenPresent = true;
-        int maxSlots = 100;
-        List<Long> slotIds = pkcs11Library.C_GetSlotList(tokenPresent, maxSlots);
+        List<Long> slotIds = pkcs11Library.C_GetSlotList(true);
         assertEquals(1, slotIds.size());
         assertEquals(0, slotIds.get(0));
     }
@@ -74,9 +72,7 @@ public class Pkcs11LibraryTest {
     @Test
     public void testGetSlotInfo() throws Pkcs11Exception {
         // Get the slot list
-        boolean tokenPresent = true;
-        int maxSlots = 100;
-        List<Long> slotIds = pkcs11Library.C_GetSlotList(tokenPresent, maxSlots);
+        List<Long> slotIds = pkcs11Library.C_GetSlotList(true);
         assertEquals(1, slotIds.size());
         assertEquals(0, slotIds.get(0));
 
@@ -104,9 +100,7 @@ public class Pkcs11LibraryTest {
     @Test
     public void testGetTokenInfo() throws Pkcs11Exception {
         // Get the slot list
-        boolean tokenPresent = true;
-        int maxSlots = 100;
-        List<Long> slotIds = pkcs11Library.C_GetSlotList(tokenPresent, maxSlots);
+        List<Long> slotIds = pkcs11Library.C_GetSlotList(true);
         assertEquals(1, slotIds.size());
         assertEquals(0, slotIds.get(0));
 

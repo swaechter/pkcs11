@@ -106,15 +106,14 @@ public class Pkcs11Library {
      * Get all slots from the PKCS11 middleware.
      *
      * @param tokenPresent Flag whether the tokens have to be present
-     * @param maxSlots     Maximum numbers of slot to search for
      * @return List with the slot IDs
      * @throws Pkcs11Exception Thrown if the slot list can't be read
      */
-    public List<Long> C_GetSlotList(boolean tokenPresent, int maxSlots) throws Pkcs11Exception {
+    public List<Long> C_GetSlotList(boolean tokenPresent) throws Pkcs11Exception {
         try (Arena arena = Arena.ofConfined()) {
             // Invoke the function
             GetSlotListFunction function = new GetSlotListFunction(linker, loaderLookup, template);
-            return function.invokeFunction(arena, tokenPresent, maxSlots);
+            return function.invokeFunction(arena, tokenPresent);
         }
     }
 

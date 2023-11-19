@@ -117,16 +117,15 @@ public class Pkcs11Module extends Pkcs11Container implements Closeable {
      * Get all slots.
      *
      * @param tokenPresent Flag whether the tokens have to be present
-     * @param maxSlots     Maximum numbers of slot to search for
      * @return List with the slots
      * @throws Pkcs11Exception Thrown if the slot list can't be read
      */
-    public List<Pkcs11Slot> getSlots(boolean tokenPresent, int maxSlots) throws Pkcs11Exception {
+    public List<Pkcs11Slot> getSlots(boolean tokenPresent) throws Pkcs11Exception {
         // Ensure is initialized
         ensureIsInitialized(false);
 
         // Get the slots
-        List<Long> slotIds = getPkcs11Library().C_GetSlotList(tokenPresent, maxSlots);
+        List<Long> slotIds = getPkcs11Library().C_GetSlotList(tokenPresent);
 
         // Return the slots
         List<Pkcs11Slot> pkcs11Slots = new ArrayList<>(slotIds.size());
