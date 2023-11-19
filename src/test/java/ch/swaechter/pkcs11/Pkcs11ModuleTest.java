@@ -1,7 +1,6 @@
 package ch.swaechter.pkcs11;
 
-import ch.swaechter.pkcs11.headers.CkSessionState;
-import ch.swaechter.pkcs11.headers.CkUserType;
+import ch.swaechter.pkcs11.headers.*;
 import ch.swaechter.pkcs11.objects.*;
 import ch.swaechter.pkcs11.templates.AlignedLinuxTemplate;
 import ch.swaechter.pkcs11.templates.PackedWindowsTemplate;
@@ -9,6 +8,7 @@ import ch.swaechter.pkcs11.templates.Template;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -171,6 +171,45 @@ public class Pkcs11ModuleTest {
 
             // Finalize the module explicitly. The try-with-resource won't finalize the module another time
             pkcs11Module.finalizeModule();
+        }
+    }
+
+    @Test
+    public void testObjects() throws Exception {
+        // Create the template
+        Template template = Template.detectTemplate();
+        assertTrue(template instanceof PackedWindowsTemplate || template instanceof AlignedLinuxTemplate);
+
+        // Work with the module
+        try (Pkcs11Module pkcs11Module = new Pkcs11Module(Pkcs11Template.LIBRARY_NAME, template)) {
+            // Get the slot and token
+            Pkcs11Slot pkcs11Slot = pkcs11Module.getSlot(0);
+            Pkcs11Token pkcs11Token = pkcs11Slot.getToken();
+
+            // Open a session
+            try (Pkcs11Session pkcs11Session = pkcs11Token.openSession(true, true)) {
+                // Login
+                pkcs11Session.loginUser(CkUserType.CKU_USER, Pkcs11Template.PKCS11_TOKEN_PIN);
+
+                // Find the private key handle
+                List<CkAttributeValue> privateKeyCkAttributeValues = new ArrayList<>();
+                privateKeyCkAttributeValues.add(new CkAttributeValue(CkAttribute.CKA_CLASS, CkObjectClass.CKO_PRIVATE_KEY.value));
+                List<Long> privateKeyObjectIds = pkcs11Session.findObjects(privateKeyCkAttributeValues);
+                assertEquals(1, privateKeyObjectIds.size());
+                assertTrue(privateKeyObjectIds.contains(43450373L) || privateKeyObjectIds.contains(206635013L));
+
+                // Find the certificate handles
+                List<CkAttributeValue> certificateCkAttributeValues = new ArrayList<>();
+                certificateCkAttributeValues.add(new CkAttributeValue(CkAttribute.CKA_CLASS, CkObjectClass.CKO_CERTIFICATE.value));
+                List<Long> certificateObjectIds = pkcs11Session.findObjects(certificateCkAttributeValues);
+                assertEquals(3, certificateObjectIds.size());
+                assertTrue(certificateObjectIds.contains(236257286L) || certificateObjectIds.contains(218038278L));
+                assertTrue(certificateObjectIds.contains(11337735L) || certificateObjectIds.contains(71958535L));
+                assertTrue(certificateObjectIds.contains(236781576L) || certificateObjectIds.contains(149684232L));
+
+                // Logout
+                pkcs11Session.logoutUser();
+            }
         }
     }
 

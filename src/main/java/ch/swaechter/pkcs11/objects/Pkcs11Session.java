@@ -2,11 +2,14 @@ package ch.swaechter.pkcs11.objects;
 
 import ch.swaechter.pkcs11.Pkcs11Exception;
 import ch.swaechter.pkcs11.Pkcs11Library;
+import ch.swaechter.pkcs11.headers.CkAttributeValue;
 import ch.swaechter.pkcs11.headers.CkSessionInfo;
 import ch.swaechter.pkcs11.headers.CkUserType;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Object that represents a slot in the PKCS11 middleware.
@@ -79,6 +82,62 @@ public class Pkcs11Session implements Closeable {
     public void logoutUser() throws Pkcs11Exception {
         // Logout the user
         pkcs11Library.C_Logout(sessionId);
+    }
+
+    /**
+     * Find all objects for the given search template.
+     *
+     * @param searchTemplate Search template
+     * @return All matching and found objects
+     * @throws Pkcs11Exception Thrown if the find operation fails
+     */
+    public List<Long> findObjects(List<CkAttributeValue> searchTemplate) throws Pkcs11Exception {
+        return findObjects(searchTemplate, 10);
+    }
+
+    /**
+     * Find all objects for the given search template.
+     *
+     * @param searchTemplate Search template
+     * @param batchSize      Batch size to retrieve objects
+     * @return All matching and found objects
+     * @throws Pkcs11Exception Thrown if the find operation fails
+     */
+    public List<Long> findObjects(List<CkAttributeValue> searchTemplate, int batchSize) throws Pkcs11Exception {
+        // Check the batch size
+        if (batchSize < 1 || batchSize > 1000) {
+            throw new Pkcs11Exception("The batch size has to be in the range 1 to 1000, not " + batchSize);
+        }
+
+        // Flag whether the find was initialized
+        boolean findInitialized = false;
+
+        try {
+            // Define the current objects list and a list with all found object IDs
+            List<Long> currentObjectIds;
+            List<Long> allObjectIds = new ArrayList<>();
+
+            // Initialize the object finding
+            pkcs11Library.C_FindObjectsInit(sessionId, searchTemplate);
+            findInitialized = true;
+
+            // Search as long we find new objects/no empty array
+            do {
+                // Find the current objects
+                currentObjectIds = pkcs11Library.C_FindObjects(sessionId, batchSize);
+
+                // Add the current objects
+                allObjectIds.addAll(currentObjectIds);
+            } while (!currentObjectIds.isEmpty() && currentObjectIds.size() == batchSize);
+
+            // Return the found object IDs
+            return allObjectIds;
+        } finally {
+            // Finalize the object finding if required
+            if (findInitialized) {
+                pkcs11Library.C_FindObjectsFinal(sessionId);
+            }
+        }
     }
 
     /**
