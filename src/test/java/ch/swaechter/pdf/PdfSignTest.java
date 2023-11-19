@@ -12,15 +12,16 @@ import ch.swaechter.pkcs11.templates.Template;
 import com.itextpdf.forms.fields.properties.SignedAppearanceText;
 import com.itextpdf.forms.form.element.SignatureFieldAppearance;
 import com.itextpdf.kernel.geom.Rectangle;
+import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfReader;
 import com.itextpdf.kernel.pdf.StampingProperties;
-import com.itextpdf.signatures.BouncyCastleDigest;
-import com.itextpdf.signatures.IExternalDigest;
-import com.itextpdf.signatures.PdfSigner;
+import com.itextpdf.signatures.*;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -71,6 +72,26 @@ public class PdfSignTest {
 
                 // Logout
                 pkcs11Session.logoutUser();
+            }
+        }
+
+        // Verify the signed PDF document
+        try (
+            PdfReader pdfReader = new PdfReader(new FileInputStream(outputFile));
+            PdfDocument pdfDocument = new PdfDocument(pdfReader)
+        ) {
+            // Create the signature utils and get all signature names
+            SignatureUtil signatureUtil = new SignatureUtil(pdfDocument);
+            List<String> signatureNames = signatureUtil.getSignatureNames();
+
+            // Check all signatures
+            for (String signatureName : signatureNames) {
+                // Read the signature
+                PdfPKCS7 pdfPkcs7 = signatureUtil.readSignatureData(signatureName);
+
+                // Check the signature
+                assertTrue(signatureUtil.signatureCoversWholeDocument(signatureName));
+                assertTrue(pdfPkcs7.verifySignatureIntegrityAndAuthenticity());
             }
         }
     }
