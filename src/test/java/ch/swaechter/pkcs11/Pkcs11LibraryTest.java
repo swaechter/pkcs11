@@ -244,12 +244,16 @@ public class Pkcs11LibraryTest {
         // Finalize the object search
         pkcs11Library.C_FindObjectsFinal(sessionId);
 
-        // Get the attributes
+        // Define the certificate value find object template
         ckAttributeSearchTemplate.clear();
         ckAttributeSearchTemplate.add(new CkAttributeValue(CkAttribute.CKA_VALUE, null));
-        List<byte[]> attributeValues = pkcs11Library.C_GetAttributeValue(sessionId, objectHandles.get(0), ckAttributeSearchTemplate);
-        for (byte[] attributeValue : attributeValues) {
-            System.out.println("Data: " + Arrays.toString(attributeValue));
+
+        // Get the attribute values
+        for (long objectHandle : objectHandles) {
+            List<byte[]> attributeValues = pkcs11Library.C_GetAttributeValue(sessionId, objectHandle, ckAttributeSearchTemplate);
+            assertEquals(1, attributeValues.size());
+            byte[] attributeValue = attributeValues.get(0);
+            assertTrue(attributeValue.length >= 1380 && attributeValue.length <= 1852);
         }
 
         // Logout

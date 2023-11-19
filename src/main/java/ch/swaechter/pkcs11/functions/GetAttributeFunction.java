@@ -56,7 +56,7 @@ public class GetAttributeFunction extends AbstractFunction {
             for (int i = 0; i < ckAttributeSearchTemplate.size(); i++) {
                 // TODO: Don't use fixed memory allocation
                 // Allocate the buffer
-                MemorySegment sizeMemorySegment = getTemplate().allocateLongArray(arena, 2000);
+                MemorySegment sizeMemorySegment = arena.allocateArray(JAVA_BYTE, 2000);
                 allocatedMemorySegments.add(sizeMemorySegment);
 
                 // Get the attribute
@@ -76,8 +76,8 @@ public class GetAttributeFunction extends AbstractFunction {
             List<byte[]> returnValues = new ArrayList<>(ckAttributeSearchTemplate.size());
             for (int i = 0; i < ckAttributeSearchTemplate.size(); i++) {
                 byte[] data = getBytes(allocatedMemorySegments.get(i));
-                int value = (int) getTemplate().getCkAttributeValueLenHandle().get(attributesMemorySegment.asSlice(i * getTemplate().getCkAttributeLayout().byteSize()));
-                byte[] realData = Arrays.copyOf(data, value);
+                long value = (long) getTemplate().getCkAttributeValueLenHandle().get(attributesMemorySegment.asSlice(i * getTemplate().getCkAttributeLayout().byteSize()));
+                byte[] realData = Arrays.copyOf(data, (int) value);
                 returnValues.add(realData);
             }
 

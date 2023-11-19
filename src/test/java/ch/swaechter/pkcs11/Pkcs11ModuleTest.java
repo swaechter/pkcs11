@@ -211,8 +211,10 @@ public class Pkcs11ModuleTest {
                 List<CkAttributeValue> certificateValueCkAttributeValues = new ArrayList<>();
                 certificateValueCkAttributeValues.add(new CkAttributeValue(CkAttribute.CKA_VALUE, null));
                 for (long certificateObjectId : certificateObjectIds) {
-                    List<byte[]> certificateAttributeValues = pkcs11Session.getAttributeValue(certificateObjectId, certificateValueCkAttributeValues);
-                    assertEquals(1, certificateAttributeValues.size());
+                    List<byte[]> attributeValues = pkcs11Session.getAttributeValue(certificateObjectId, certificateValueCkAttributeValues);
+                    assertEquals(1, attributeValues.size());
+                    byte[] attributeValue = attributeValues.get(0);
+                    assertTrue(attributeValue.length >= 1380 && attributeValue.length <= 1852);
                 }
 
                 // Logout
