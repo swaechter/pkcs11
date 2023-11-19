@@ -208,10 +208,8 @@ public class Pkcs11ModuleTest {
                 assertTrue(certificateObjectIds.contains(236781576L) || certificateObjectIds.contains(149684232L));
 
                 // Read all certificate values
-                List<CkAttributeValue> certificateValueCkAttributeValues = new ArrayList<>();
-                certificateValueCkAttributeValues.add(new CkAttributeValue(CkAttribute.CKA_VALUE, null));
                 for (long certificateObjectId : certificateObjectIds) {
-                    List<byte[]> attributeValues = pkcs11Session.getAttributeValue(certificateObjectId, certificateValueCkAttributeValues);
+                    List<byte[]> attributeValues = pkcs11Session.getAttributeValue(certificateObjectId, List.of(CkAttribute.CKA_VALUE));
                     assertEquals(1, attributeValues.size());
                     byte[] attributeValue = attributeValues.get(0);
                     assertTrue(attributeValue.length >= 1380 && attributeValue.length <= 1852);

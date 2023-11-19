@@ -65,10 +65,6 @@ public class Pkcs11Signature implements IExternalSignature {
             throw new Pkcs11Exception("At least 3 certificates are required for signing. Found: " + objectHandles.size());
         }
 
-        // Define the value template
-        ckAttributeSearchTemplate.clear();
-        ckAttributeSearchTemplate.add(new CkAttributeValue(CkAttribute.CKA_VALUE, null));
-
         // Get the value of each certificate
         Certificate[] certificates = new Certificate[objectHandles.size()];
         for (int i = 0; i < objectHandles.size(); i++) {
@@ -76,7 +72,7 @@ public class Pkcs11Signature implements IExternalSignature {
             long objectHandle = objectHandles.get(i);
 
             // Get the certificate value
-            List<byte[]> attributeValues = pkcs11Session.getAttributeValue(objectHandle, ckAttributeSearchTemplate);
+            List<byte[]> attributeValues = pkcs11Session.getAttributeValue(objectHandle, List.of(CkAttribute.CKA_VALUE));
             byte[] value = attributeValues.get(0);
 
             // Convert and add the certificate

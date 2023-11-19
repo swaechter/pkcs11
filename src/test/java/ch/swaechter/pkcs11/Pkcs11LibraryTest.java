@@ -244,13 +244,9 @@ public class Pkcs11LibraryTest {
         // Finalize the object search
         pkcs11Library.C_FindObjectsFinal(sessionId);
 
-        // Define the certificate value find object template
-        ckAttributeSearchTemplate.clear();
-        ckAttributeSearchTemplate.add(new CkAttributeValue(CkAttribute.CKA_VALUE, null));
-
         // Get the attribute values
         for (long objectHandle : objectHandles) {
-            List<byte[]> attributeValues = pkcs11Library.C_GetAttributeValue(sessionId, objectHandle, ckAttributeSearchTemplate);
+            List<byte[]> attributeValues = pkcs11Library.C_GetAttributeValue(sessionId, objectHandle, List.of(CkAttribute.CKA_VALUE));
             assertEquals(1, attributeValues.size());
             byte[] attributeValue = attributeValues.get(0);
             assertTrue(attributeValue.length >= 1380 && attributeValue.length <= 1852);

@@ -249,17 +249,17 @@ public class Pkcs11Library {
     /**
      * Obtains an attribute value of an object.
      *
-     * @param sessionId                 ID of the session
-     * @param objectHandleId            ID of the object handle
-     * @param ckAttributeSearchTemplate Search template
+     * @param sessionId      ID of the session
+     * @param objectHandleId ID of the object handle
+     * @param attributes   Attributes to read
      * @return Attribute values
      * @throws Pkcs11Exception Thrown if the session/object do not exist or the attributes can't be read
      */
-    public List<byte[]> C_GetAttributeValue(long sessionId, long objectHandleId, List<CkAttributeValue> ckAttributeSearchTemplate) throws Pkcs11Exception {
+    public List<byte[]> C_GetAttributeValue(long sessionId, long objectHandleId, List<CkAttribute> attributes) throws Pkcs11Exception {
         try (Arena arena = Arena.ofConfined()) {
             // Invoke the function
             GetAttributeFunction function = new GetAttributeFunction(linker, loaderLookup, template);
-            return function.invokeFunction(arena, sessionId, objectHandleId, ckAttributeSearchTemplate);
+            return function.invokeFunction(arena, sessionId, objectHandleId, attributes);
         }
     }
 
@@ -267,14 +267,14 @@ public class Pkcs11Library {
      * Initializes an object search operation.
      *
      * @param sessionId                 ID of the session
-     * @param ckAttributeSearchTemplate Search template
+     * @param searchTemplate Search template
      * @throws Pkcs11Exception Thrown if the session does not exist or the search operation can't be initialized
      */
-    public void C_FindObjectsInit(long sessionId, List<CkAttributeValue> ckAttributeSearchTemplate) throws Pkcs11Exception {
+    public void C_FindObjectsInit(long sessionId, List<CkAttributeValue> searchTemplate) throws Pkcs11Exception {
         try (Arena arena = Arena.ofConfined()) {
             // Invoke the function
             FindObjectsInitFunction function = new FindObjectsInitFunction(linker, loaderLookup, template);
-            function.invokeFunction(arena, sessionId, ckAttributeSearchTemplate);
+            function.invokeFunction(arena, sessionId, searchTemplate);
         }
     }
 

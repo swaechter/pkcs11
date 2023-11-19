@@ -3,6 +3,7 @@ package ch.swaechter.pkcs11.objects;
 import ch.swaechter.pkcs11.Pkcs11Container;
 import ch.swaechter.pkcs11.Pkcs11Exception;
 import ch.swaechter.pkcs11.Pkcs11Library;
+import ch.swaechter.pkcs11.headers.CkAttribute;
 import ch.swaechter.pkcs11.headers.CkAttributeValue;
 import ch.swaechter.pkcs11.headers.CkSessionInfo;
 import ch.swaechter.pkcs11.headers.CkUserType;
@@ -144,7 +145,7 @@ public class Pkcs11Session extends Pkcs11Container implements Closeable {
      * @return Attribute values
      * @throws Pkcs11Exception Thrown if the object does not exist or the values can't be read
      */
-    public List<byte[]> getAttributeValue(long objectId, List<CkAttributeValue> attributes) throws Pkcs11Exception {
+    public List<byte[]> getAttributeValue(long objectId, List<CkAttribute> attributes) throws Pkcs11Exception {
         // Get the attribute values
         return getPkcs11Library().C_GetAttributeValue(sessionId, objectId, attributes);
     }

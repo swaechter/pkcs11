@@ -9,7 +9,8 @@ import java.lang.foreign.*;
 import java.lang.invoke.MethodHandle;
 import java.util.List;
 
-import static java.lang.foreign.ValueLayout.*;
+import static java.lang.foreign.ValueLayout.JAVA_BYTE;
+import static java.lang.foreign.ValueLayout.JAVA_INT;
 
 /**
  * Initializes an object search operation in the PKCS11 middleware.
@@ -32,20 +33,20 @@ public class FindObjectsInitFunction extends AbstractFunction {
     /**
      * Invoke the function.
      *
-     * @param arena                     Memory arena
-     * @param sessionId                 ID of the session
-     * @param ckAttributeSearchTemplate Search template
+     * @param arena          Memory arena
+     * @param sessionId      ID of the session
+     * @param searchTemplate Search template
      * @throws Pkcs11Exception Thrown if the session does not exist or the search operation can't be initialized
      */
-    public void invokeFunction(Arena arena, long sessionId, List<CkAttributeValue> ckAttributeSearchTemplate) throws Pkcs11Exception {
+    public void invokeFunction(Arena arena, long sessionId, List<CkAttributeValue> searchTemplate) throws Pkcs11Exception {
         try {
             // Create a struct array with the attributes
-            MemorySegment attributesMemorySegment = arena.allocate(MemoryLayout.sequenceLayout(ckAttributeSearchTemplate.size(), getTemplate().getCkAttributeLayout()));
+            MemorySegment attributesMemorySegment = arena.allocate(MemoryLayout.sequenceLayout(searchTemplate.size(), getTemplate().getCkAttributeLayout()));
 
             // Fill in the values
-            for (int i = 0; i < ckAttributeSearchTemplate.size(); i++) {
+            for (int i = 0; i < searchTemplate.size(); i++) {
                 // Get the attribute
-                CkAttributeValue ckAttribute = ckAttributeSearchTemplate.get(i);
+                CkAttributeValue ckAttribute = searchTemplate.get(i);
 
                 // Set the type
                 getTemplate().getCkAttributeTypeHandle().set(attributesMemorySegment.asSlice(i * getTemplate().getCkAttributeLayout().byteSize()), ckAttribute.type().value);
