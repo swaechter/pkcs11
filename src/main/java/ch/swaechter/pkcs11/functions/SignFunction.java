@@ -41,7 +41,7 @@ public class SignFunction extends AbstractFunction {
      */
     public byte[] invokeFunction(Arena arena, long sessionId, byte[] message, int signatureSize) throws Pkcs11Exception {
         try {
-            // Allocate an array with the message
+            // Allocate an array for the message
             MemorySegment messageMemorySegment = arena.allocateArray(JAVA_BYTE, message);
 
             // Allocate an array for the signed data and a pointer for the signature length

@@ -251,14 +251,14 @@ public class Pkcs11Library {
      *
      * @param sessionId      ID of the session
      * @param objectHandleId ID of the object handle
-     * @param attributes   Attributes to read
+     * @param attributes     Attributes to read
      * @return Attribute values
      * @throws Pkcs11Exception Thrown if the session/object do not exist or the attributes can't be read
      */
     public List<byte[]> C_GetAttributeValue(long sessionId, long objectHandleId, List<CkAttribute> attributes) throws Pkcs11Exception {
         try (Arena arena = Arena.ofConfined()) {
             // Invoke the function
-            GetAttributeFunction function = new GetAttributeFunction(linker, loaderLookup, template);
+            GetAttributeValueFunction function = new GetAttributeValueFunction(linker, loaderLookup, template);
             return function.invokeFunction(arena, sessionId, objectHandleId, attributes);
         }
     }
@@ -266,7 +266,7 @@ public class Pkcs11Library {
     /**
      * Initializes an object search operation.
      *
-     * @param sessionId                 ID of the session
+     * @param sessionId      ID of the session
      * @param searchTemplate Search template
      * @throws Pkcs11Exception Thrown if the session does not exist or the search operation can't be initialized
      */
@@ -307,18 +307,79 @@ public class Pkcs11Library {
     }
 
     /**
+     * Initializes a message-digesting operation.
+     *
+     * @param sessionId ID of the session
+     * @param mechanism ID of the mechanism
+     * @throws Pkcs11Exception Thrown if the session does not exist or the digest init operation can't succeed
+     */
+    public void C_DigestInit(long sessionId, CkMechanism mechanism) throws Pkcs11Exception {
+        try (Arena arena = Arena.ofConfined()) {
+            // Invoke the function
+            DigestInitFunction function = new DigestInitFunction(linker, loaderLookup, template);
+            function.invokeFunction(arena, sessionId, mechanism);
+        }
+    }
+
+    /**
+     * Digests single-part data.
+     *
+     * @param sessionId ID of the session
+     * @param data      Data to digest
+     * @return Digested data
+     * @throws Pkcs11Exception Thrown if the session does not exist or the digest operation can't succeed
+     */
+    public byte[] C_Digest(long sessionId, byte[] data) throws Pkcs11Exception {
+        try (Arena arena = Arena.ofConfined()) {
+            // Invoke the function
+            DigestFunction function = new DigestFunction(linker, loaderLookup, template);
+            return function.invokeFunction(arena, sessionId, data);
+        }
+    }
+
+    /**
+     * Continues a multiple-part digesting operation.
+     *
+     * @param sessionId ID of the session
+     * @param data      Data to digest
+     * @throws Pkcs11Exception Thrown if the session does not exist or the digest update operation can't succeed
+     */
+    public void C_DigestUpdate(long sessionId, byte[] data) throws Pkcs11Exception {
+        try (Arena arena = Arena.ofConfined()) {
+            // Invoke the function
+            DigestUpdateFunction function = new DigestUpdateFunction(linker, loaderLookup, template);
+            function.invokeFunction(arena, sessionId, data);
+        }
+    }
+
+    /**
+     * Finishes a multiple-part digesting operation.
+     *
+     * @param sessionId ID of the session
+     * @return Digested data
+     * @throws Pkcs11Exception Thrown if the session does not exist or the digest final operation can't succeed
+     */
+    public byte[] C_DigestFinal(long sessionId) throws Pkcs11Exception {
+        try (Arena arena = Arena.ofConfined()) {
+            // Invoke the function
+            DigestFinalFunction function = new DigestFinalFunction(linker, loaderLookup, template);
+            return function.invokeFunction(arena, sessionId);
+        }
+    }
+
+    /**
      * Initializes a signature operation.
      *
      * @param sessionId   ID of the session
-     * @param ckMechanism ID of the mechanism
+     * @param mechanism   ID of the mechanism
      * @param keyHandleId ID of the key handle
      * @throws Pkcs11Exception Thrown if the session does not exist or the sign init operation can't succeed
      */
-    public void C_SignInit(long sessionId, CkMechanism ckMechanism, long keyHandleId) throws Pkcs11Exception {
+    public void C_SignInit(long sessionId, CkMechanism mechanism, long keyHandleId) throws Pkcs11Exception {
         try (Arena arena = Arena.ofConfined()) {
             // Invoke the function
             SignInitFunction function = new SignInitFunction(linker, loaderLookup, template);
-            function.invokeFunction(arena, sessionId, ckMechanism, keyHandleId);
+            function.invokeFunction(arena, sessionId, mechanism, keyHandleId);
         }
     }
 

@@ -260,6 +260,52 @@ public class Pkcs11LibraryTest {
     }
 
     @Test
+    public void testDigesting() throws Pkcs11Exception {
+        // Define the values
+        long slotId = 0;
+        long sessionInfoFlags = CkSessionInfoFlag.CKF_RW_SESSION.value | CkSessionInfoFlag.CKF_SERIAL_SESSION.value;
+
+        // Define the data and the expected digest
+        byte[] data = "Message to digest!".getBytes(StandardCharsets.UTF_8);
+        String expectedDigest = "af79b3a4fe04eedf6cff6c10ebfde114158c1d250e8362f4307385050b2ba015";
+
+        // Open a new session
+        long sessionId = pkcs11Library.C_OpenSession(slotId, sessionInfoFlags);
+
+        // Login as user
+        pkcs11Library.C_Login(sessionId, CkUserType.CKU_USER, Pkcs11Template.PKCS11_TOKEN_PIN);
+
+        // Digest a single block via single-part digest operation
+        pkcs11Library.C_DigestInit(sessionId, CkMechanism.CKM_SHA256);
+        byte[] digestedData = pkcs11Library.C_Digest(sessionId, data);
+        String digestHash = Pkcs11Utils.bytesToHex(digestedData);
+        assertEquals(expectedDigest, digestHash);
+
+        // Digest a single block via multi-part digest operation
+        pkcs11Library.C_DigestInit(sessionId, CkMechanism.CKM_SHA256);
+        pkcs11Library.C_DigestUpdate(sessionId, data);
+        digestedData = pkcs11Library.C_DigestFinal(sessionId);
+        digestHash = Pkcs11Utils.bytesToHex(digestedData);
+        assertEquals(expectedDigest, digestHash);
+
+        // Digest multiple blocks via multi-part digest operation
+        pkcs11Library.C_DigestInit(sessionId, CkMechanism.CKM_SHA256);
+        for (int i = 0; i < 9; i++) {
+            byte[] slice = Arrays.copyOfRange(data, i * 2, i * 2 + 2);
+            pkcs11Library.C_DigestUpdate(sessionId, slice);
+        }
+        digestedData = pkcs11Library.C_DigestFinal(sessionId);
+        digestHash = Pkcs11Utils.bytesToHex(digestedData);
+        assertEquals(expectedDigest, digestHash);
+
+        // Logout
+        pkcs11Library.C_Logout(sessionId);
+
+        // Close the session
+        pkcs11Library.C_CloseSession(sessionId);
+    }
+
+    @Test
     public void testSigning() throws Pkcs11Exception {
         // Define the values
         long slotId = 0;
@@ -295,6 +341,12 @@ public class Pkcs11LibraryTest {
         // Sign the message
         byte[] signedMessage = pkcs11Library.C_Sign(sessionId, message, 1000);
         assertFalse(Pkcs11Utils.isEmptyByteArray(signedMessage));
+
+        // Logout
+        pkcs11Library.C_Logout(sessionId);
+
+        // Close the session
+        pkcs11Library.C_CloseSession(sessionId);
     }
 
     @Test

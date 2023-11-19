@@ -34,15 +34,15 @@ public class SignInitFunction extends AbstractFunction {
      *
      * @param arena       Memory arena
      * @param sessionId   ID of the session
-     * @param ckMechanism ID of the mechanism
+     * @param mechanism ID of the mechanism
      * @param keyHandleId ID of the key handle
      * @throws Pkcs11Exception Thrown if the session does not exist or the sign init operation can't succeed
      */
-    public void invokeFunction(Arena arena, long sessionId, CkMechanism ckMechanism, long keyHandleId) throws Pkcs11Exception {
+    public void invokeFunction(Arena arena, long sessionId, CkMechanism mechanism, long keyHandleId) throws Pkcs11Exception {
         try {
             // Allocate the mechanism
             MemorySegment mechanismMemorySegment = arena.allocate(getTemplate().getCkMechanismLayout());
-            getTemplate().getCkMechanismMechanismHandle().set(mechanismMemorySegment, ckMechanism.value);
+            getTemplate().getCkMechanismMechanismHandle().set(mechanismMemorySegment, mechanism.value);
             getTemplate().getCkMechanismPParameterHandle().set(mechanismMemorySegment, MemorySegment.NULL);
             getTemplate().getCkMechanismParameterLenHandle().set(mechanismMemorySegment, 0);
 

@@ -54,4 +54,11 @@ public class Pkcs11UtilsTest {
         assertEquals(16, instant.atZone(ZoneOffset.UTC).getMinute());
         assertEquals(30, instant.atZone(ZoneOffset.UTC).getSecond());
     }
+
+    @Test
+    public void testBytesToHex() {
+        // Convert a hash
+        String hexHash = Pkcs11Utils.bytesToHex(new byte[]{-81, 121, -77, -92, -2, 4, -18, -33, 108, -1, 108, 16, -21, -3, -31, 20, 21, -116, 29, 37, 14, -125, 98, -12, 48, 115, -123, 5, 11, 43, -96, 21});
+        assertEquals("af79b3a4fe04eedf6cff6c10ebfde114158c1d250e8362f4307385050b2ba015", hexHash);
+    }
 }

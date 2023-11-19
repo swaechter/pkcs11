@@ -19,7 +19,7 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
  *
  * @author Simon Wächter
  */
-public class GetAttributeFunction extends AbstractFunction {
+public class GetAttributeValueFunction extends AbstractFunction {
 
     /**
      * Create a new function that obtains an attribute value of an object.
@@ -28,7 +28,7 @@ public class GetAttributeFunction extends AbstractFunction {
      * @param loaderLookup Symbol lookup to resolve functions from the linker
      * @param template     Template that provides the memory layouts
      */
-    public GetAttributeFunction(Linker linker, SymbolLookup loaderLookup, Template template) {
+    public GetAttributeValueFunction(Linker linker, SymbolLookup loaderLookup, Template template) {
         super(linker, loaderLookup, template);
     }
 

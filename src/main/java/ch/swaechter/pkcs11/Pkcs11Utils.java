@@ -85,4 +85,22 @@ public class Pkcs11Utils {
         LocalDateTime localDateTime = LocalDateTime.parse(utcTime, UTC_FORMATTER);
         return Optional.of(localDateTime.toInstant(ZoneOffset.UTC));
     }
+
+    /**
+     * Convert a byte array to a hexadecimal string.
+     *
+     * @param bytes Byte array
+     * @return Byte array as hexadecimal string
+     */
+    public static String bytesToHex(byte[] bytes) {
+        StringBuilder hexString = new StringBuilder();
+        for (byte b : bytes) {
+            String hex = Integer.toHexString(0xff & b);
+            if (hex.length() == 1) {
+                hexString.append('0');
+            }
+            hexString.append(hex);
+        }
+        return hexString.toString().toLowerCase();
+    }
 }
