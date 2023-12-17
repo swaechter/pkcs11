@@ -1,124 +1,212 @@
 package ch.swaechter.pkcs11;
 
-import ch.swaechter.pkcs11.functions.*;
 import ch.swaechter.pkcs11.headers.*;
-import ch.swaechter.pkcs11.templates.Template;
+import ch.swaechter.pkcs11.platforms.LinuxPkcs11Library;
+import ch.swaechter.pkcs11.platforms.WindowsPkcs11Library;
 
-import java.lang.foreign.Arena;
-import java.lang.foreign.Linker;
-import java.lang.foreign.SymbolLookup;
+import java.lang.foreign.*;
+import java.lang.invoke.MethodHandle;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
+import static java.lang.foreign.ValueLayout.JAVA_BYTE;
+import static java.lang.foreign.ValueLayout.JAVA_INT;
+
 /**
- * The PKCS11 library allows direct interactions with the PKCS11 middleware. The library is as simple as possible and
- * doesn't provide a convenient object-oriented view like the PKCS11 module, e.g. many operations are handle based.
+ * Create a new abstract PKCS11 library that contains the core logic. The struct related information are handled
+ * by the core PKCS11 template, powered by a platform dependent implementation.
  *
  * @author Simon Wächter
  */
-public class Pkcs11Library {
+public abstract class Pkcs11Library extends Pkcs11Template {
 
     /**
-     * Linker to lookup functions in the library.
+     * @param libraryName Name of the PKCS11 middleware that has to be on the library path
+     * @return Loaded, but un-initialized PKCS11 library
+     * @throws Pkcs11Exception Thrown if the PKCS11 middleware can't be loaded
      */
-    private final Linker linker;
+    public static Pkcs11Library detectPlatform(String libraryName) throws Pkcs11Exception {
+        // Ensure we are not running in a 32-bit JVM
+        String jvmArch = System.getProperty("os.arch");
+        if (jvmArch.contains("x86")) {
+            throw new Pkcs11Exception("This PKCS11 project can't run in a 32-bit JVM. Please use a 64-bit JVM.");
+        }
 
-    /**
-     * Symbol lookup to resolve functions from the linker.
-     */
-    private final SymbolLookup loaderLookup;
-
-    /**
-     * Template that provides the architecture specific memory layouts, e.g. packed or aligned structs.
-     */
-    private final Template template;
+        // Get the operating system name
+        String operatingSystemName = System.getProperty("os.name").toLowerCase();
+        if (operatingSystemName.contains("win")) {
+            return new WindowsPkcs11Library(libraryName);
+        } else if (operatingSystemName.contains("nux")) {
+            return new LinuxPkcs11Library(libraryName);
+        } else {
+            throw new Pkcs11Exception("Unsupported template platform!");
+        }
+    }
 
     /**
      * Create a new PKCS11 library and load the given PKCS11 middleware.
      *
      * @param libraryName Name of the PKCS11 middleware that has to be on the library path
-     * @param template    Template that provides the architecture specific memory layouts
      * @throws Pkcs11Exception Thrown if the PKCS11 middleware can't be loaded
      */
-    public Pkcs11Library(String libraryName, Template template) throws Pkcs11Exception {
-        // Load the PKCS11 library
-        loadPkcs11Library(libraryName);
-
-        // Create the linker and lookup
-        this.linker = Linker.nativeLinker();
-        this.loaderLookup = SymbolLookup.loaderLookup();
-
-        // Set the template
-        this.template = template;
+    public Pkcs11Library(String libraryName) throws Pkcs11Exception {
+        super(libraryName);
     }
 
     /**
-     * Load the given PKCS11 middleware.
+     * Initializes Cryptoki.
      *
-     * @param libraryName Name of the PKCS11 middleware
-     * @throws Pkcs11Exception Thrown if the PKCS11 middleware can't be loaded
+     * @throws Pkcs11Exception Thrown if the function invocation fails
      */
-    private void loadPkcs11Library(String libraryName) throws Pkcs11Exception {
+    public void C_Initialize() throws Pkcs11Exception {
         try {
-            // Load the library
-            System.loadLibrary(libraryName);
-        } catch (Exception exception) {
-            throw new Pkcs11Exception("Unable to load the PKCS11 library: " + exception.getMessage(), exception);
+            // Allocate the init arguments value
+            MemorySegment pInitArgsMemorySegment = MemorySegment.NULL;
+
+            // Invoke the function
+            FunctionDescriptor functionDescriptor = FunctionDescriptor.of(JAVA_INT, ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)));
+            MethodHandle methodHandle = downCallHandle("C_Initialize", functionDescriptor);
+            CkResult ckResult = CkResult.valueOf((int) methodHandle.invokeExact(pInitArgsMemorySegment));
+
+            // Check the result
+            if (ckResult != CkResult.CKR_OK) {
+                throw new Pkcs11Exception("C_Initialize failed", ckResult);
+            }
+        } catch (Throwable throwable) {
+            throw new Pkcs11Exception("C_Initialize failed: " + throwable.getMessage(), throwable);
         }
     }
 
     /**
-     * Initialize the PKCS11 middleware.
+     * Clean up miscellaneous Cryptoki-associated resources.
      *
-     * @throws Pkcs11Exception Thrown if the PKCS11 middleware can't be initialized
-     */
-    public void C_Initialize() throws Pkcs11Exception {
-        // Invoke the function
-        InitializeFunction function = new InitializeFunction(linker, loaderLookup, template);
-        function.invokeFunction();
-    }
-
-    /**
-     * Finalize the PKCS11 middleware.
-     *
-     * @throws Pkcs11Exception Thrown if the PKCS11 middleware can't be finalized
+     * @throws Pkcs11Exception Thrown if the function invocation fails
      */
     public void C_Finalize() throws Pkcs11Exception {
-        // Invoke the function
-        FinalizeFunction finalizeFunction = new FinalizeFunction(linker, loaderLookup, template);
-        finalizeFunction.invokeFunction();
+        try {
+            // Allocate the pReserved value
+            MemorySegment pReservedMemorySegment = MemorySegment.NULL;
+
+            // Invoke the function
+            FunctionDescriptor functionDescriptor = FunctionDescriptor.of(JAVA_INT, ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)));
+            MethodHandle methodHandle = downCallHandle("C_Finalize", functionDescriptor);
+            CkResult ckResult = CkResult.valueOf((int) methodHandle.invokeExact(pReservedMemorySegment));
+            if (ckResult != CkResult.CKR_OK) {
+                throw new Pkcs11Exception("C_Finalize failed", ckResult);
+            }
+        } catch (Throwable throwable) {
+            throw new Pkcs11Exception("C_Finalize failed: " + throwable.getMessage(), throwable);
+        }
     }
 
     /**
-     * Get info from the PKCS11 middleware.
+     * Obtains general information about Cryptoki.
      *
-     * @return PKCS11 middleware information
-     * @throws Pkcs11Exception Thrown if the info can't be read
+     * @return General information
+     * @throws Pkcs11Exception Thrown if the function invocation fails
      */
     public CkInfo C_GetInfo() throws Pkcs11Exception {
         try (Arena arena = Arena.ofConfined()) {
+            // Allocate the info struct
+            MemorySegment infoMemorySegment = arena.allocate(ckInfoLayout);
+
             // Invoke the function
-            GetInfoFunction function = new GetInfoFunction(linker, loaderLookup, template);
-            return function.invokeFunction(arena);
+            FunctionDescriptor functionDescriptor = FunctionDescriptor.of(JAVA_INT, ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)));
+            MethodHandle methodHandle = downCallHandle("C_GetInfo", functionDescriptor);
+            CkResult ckResult = CkResult.valueOf((int) methodHandle.invokeExact(infoMemorySegment));
+            if (ckResult != CkResult.CKR_OK) {
+                throw new Pkcs11Exception("C_GetInfo failed", ckResult);
+            }
+
+            // Get the cryptoki version
+            MemorySegment cryptokiNamedMemorySegment = invokeExact(ckInfoCryptokiVersionHandle, infoMemorySegment);
+            byte cryptokiMajor = (byte) ckVersionMajorVarHandle.get(cryptokiNamedMemorySegment);
+            byte cryptokiMinor = (byte) ckVersionMinorHandle.get(cryptokiNamedMemorySegment);
+            CkVersion cryptokiVersion = new CkVersion(cryptokiMajor, cryptokiMinor);
+
+            // Get the manufacturer ID
+            String manufacturerId = readFixedString(infoMemorySegment, ckInfoLayout, "manufacturerId");
+
+            // Vet the library version
+            MemorySegment libraryNamedMemorySegment = invokeExact(ckInfoLibraryVersionHandle, infoMemorySegment);
+            byte libraryMajor = (byte) ckVersionMajorVarHandle.get(libraryNamedMemorySegment);
+            byte libraryMinor = (byte) ckVersionMinorHandle.get(libraryNamedMemorySegment);
+            CkVersion libraryVersion = new CkVersion(libraryMajor, libraryMinor);
+
+            // Get the flags
+            Long flags = readLong(infoMemorySegment, ckInfoLayout, "flags");
+
+            // Get the library description
+            String libraryDescription = readFixedString(infoMemorySegment, ckInfoLayout, "libraryDescription");
+
+            // Return the info
+            return new CkInfo(
+                cryptokiVersion,
+                manufacturerId,
+                flags,
+                libraryDescription,
+                libraryVersion
+            );
+        } catch (Throwable throwable) {
+            throw new Pkcs11Exception("C_GetInfo failed: " + throwable.getMessage(), throwable);
         }
     }
 
     /**
-     * Get all slots from the PKCS11 middleware.
+     * Obtains a list of slots in the system.
      *
-     * @param tokenPresent Flag whether the tokens have to be present
-     * @return List with the slot IDs
-     * @throws Pkcs11Exception Thrown if the slot list can't be read
+     * @param tokenPresent Flag whether to only list slots with a token present
+     * @return All slot IDs
+     * @throws Pkcs11Exception Thrown if the function invocation fails
      */
     public List<Long> C_GetSlotList(boolean tokenPresent) throws Pkcs11Exception {
         try (Arena arena = Arena.ofConfined()) {
-            // Invoke the function
-            GetSlotListFunction function = new GetSlotListFunction(linker, loaderLookup, template);
-            return function.invokeFunction(arena, tokenPresent);
+            // Define the flag to search for all slots present/not present
+            byte presentFlag = tokenPresent ? (byte) 0x1 : (byte) 0x0;
+
+            // Define the function
+            FunctionDescriptor functionDescriptor = FunctionDescriptor.of(JAVA_INT, JAVA_BYTE, ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)), ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)));
+            MethodHandle methodHandle = downCallHandle("C_GetSlotList", functionDescriptor);
+
+            // Allocate an array with maxSlots items/potential tokens
+            MemorySegment slotIdCountMemorySegment = allocateLong(arena);
+            MemorySegment slotIdsMemorySegment = MemorySegment.NULL;
+
+            // Invoke the function to get the number of slots
+            CkResult ckResult = CkResult.valueOf((int) methodHandle.invokeExact(presentFlag, slotIdsMemorySegment, slotIdCountMemorySegment));
+            if (ckResult != CkResult.CKR_OK) {
+                throw new Pkcs11Exception("C_GetSlotList failed", ckResult);
+            }
+
+            // Allocate a buffer for the given slots
+            int slotCount = (int) readLong(slotIdCountMemorySegment);
+            slotIdsMemorySegment = allocateLong(arena, slotCount);
+
+            // Invoke the function to get the slot list
+            ckResult = CkResult.valueOf((int) methodHandle.invokeExact(presentFlag, slotIdsMemorySegment, slotIdCountMemorySegment));
+            if (ckResult != CkResult.CKR_OK) {
+                throw new Pkcs11Exception("C_GetSlotList failed", ckResult);
+            }
+
+            // Convert the slot IDs
+            List<Long> slotIds = new ArrayList<>(slotCount);
+            for (int i = 0; i < slotCount; i++) {
+                // Get slot ID at the given offset
+                long slotId = readLongFromArray(slotIdsMemorySegment, i);
+                slotIds.add(slotId);
+            }
+
+            // Return the slots
+            return slotIds;
+        } catch (Throwable throwable) {
+            throw new Pkcs11Exception("C_GetSlotList failed: " + throwable.getMessage(), throwable);
         }
     }
 
     /**
-     * Get the slot information from a slot.
+     * Obtains information about a particular slot.
      *
      * @param slotId ID of the slot
      * @return Slot information
@@ -126,29 +214,139 @@ public class Pkcs11Library {
      */
     public CkSlotInfo C_GetSlotInfo(long slotId) throws Pkcs11Exception {
         try (Arena arena = Arena.ofConfined()) {
+            // Allocate the slot info struct
+            MemorySegment slotInfoMemorySegment = arena.allocate(ckSlotInfoLayout);
+
             // Invoke the function
-            GetSlotInfoFunction function = new GetSlotInfoFunction(linker, loaderLookup, template);
-            return function.invokeFunction(arena, slotId);
+            FunctionDescriptor functionDescriptor = FunctionDescriptor.of(JAVA_INT, JAVA_INT, ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)));
+            MethodHandle methodHandle = downCallHandle("C_GetSlotInfo", functionDescriptor);
+            CkResult ckResult = CkResult.valueOf((int) methodHandle.invoke((int) slotId, slotInfoMemorySegment));
+            if (ckResult != CkResult.CKR_OK) {
+                throw new Pkcs11Exception("C_GetSlotInfo failed", ckResult);
+            }
+
+            // Get the slot description
+            String slotDescription = readFixedString(slotInfoMemorySegment, ckSlotInfoLayout, "slotDescription");
+
+            // Get the manufacturer ID
+            String manufacturerId = readFixedString(slotInfoMemorySegment, ckSlotInfoLayout, "manufacturerId");
+
+            // Get the flags
+            Long flags = readLong(slotInfoMemorySegment, ckSlotInfoLayout, "flags");
+
+            // Get the hardware version
+            MemorySegment hardwareNamedMemorySegment = invokeExact(ckSlotInfoHardwareVersionHandle, slotInfoMemorySegment);
+            byte hardwareMajor = (byte) ckVersionMajorVarHandle.get(hardwareNamedMemorySegment);
+            byte hardwareMinor = (byte) ckVersionMinorHandle.get(hardwareNamedMemorySegment);
+            CkVersion hardwareVersion = new CkVersion(hardwareMajor, hardwareMinor);
+
+            // Get the firmware version
+            MemorySegment firmwareNamedMemorySegment = invokeExact(ckSlotInfoFirmwareVersionHandle, slotInfoMemorySegment);
+            byte firmwareMajor = (byte) ckVersionMajorVarHandle.get(firmwareNamedMemorySegment);
+            byte firmwareMinor = (byte) ckVersionMinorHandle.get(firmwareNamedMemorySegment);
+            CkVersion firmwareVersion = new CkVersion(firmwareMajor, firmwareMinor);
+
+            // Return the slot info
+            return new CkSlotInfo(
+                slotDescription,
+                manufacturerId,
+                flags,
+                hardwareVersion,
+                firmwareVersion
+            );
+        } catch (Throwable throwable) {
+            throw new Pkcs11Exception("C_GetSlotList failed: " + throwable.getMessage(), throwable);
         }
     }
 
     /**
-     * Get the token information from a slot.
+     * Obtains information about a particular token.
      *
      * @param slotId ID of the slot
      * @return Token information
-     * @throws Pkcs11Exception Thrown if the slot does not exist, the token is not present or can't be read
+     * @throws Pkcs11Exception Thrown if the slot does not exist or can't be read
      */
     public CkTokenInfo C_GetTokenInfo(long slotId) throws Pkcs11Exception {
         try (Arena arena = Arena.ofConfined()) {
+            // Allocate the token info struct
+            MemorySegment tokenInfoMemorySegment = arena.allocate(ckTokenInfoLayout);
+
             // Invoke the function
-            GetTokenInfoFunction function = new GetTokenInfoFunction(linker, loaderLookup, template);
-            return function.invokeFunction(arena, slotId);
+            FunctionDescriptor functionDescriptor = FunctionDescriptor.of(JAVA_INT, JAVA_INT, ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)));
+            MethodHandle methodHandle = downCallHandle("C_GetTokenInfo", functionDescriptor);
+            CkResult ckResult = CkResult.valueOf((int) methodHandle.invokeExact((int) slotId, tokenInfoMemorySegment));
+            if (ckResult != CkResult.CKR_OK) {
+                throw new Pkcs11Exception("C_GetTokenInfo failed", ckResult);
+            }
+
+            // Get the label
+            String label = readFixedString(tokenInfoMemorySegment, ckTokenInfoLayout, "label");
+
+            // Get the manufacturer ID
+            String manufacturerId = readFixedString(tokenInfoMemorySegment, ckTokenInfoLayout, "manufacturerId");
+
+            // Get the model
+            String model = readFixedString(tokenInfoMemorySegment, ckTokenInfoLayout, "model");
+
+            // Get the serial number
+            String serialNumber = readFixedString(tokenInfoMemorySegment, ckTokenInfoLayout, "serialNumber");
+
+            // Get all values
+            Long flags = readLong(tokenInfoMemorySegment, ckTokenInfoLayout, "flags");
+            Long maxSessionCount = readLong(tokenInfoMemorySegment, ckTokenInfoLayout, "maxSessionCount");
+            Long sessionCount = readLong(tokenInfoMemorySegment, ckTokenInfoLayout, "sessionCount");
+            Long maxRwSessionCount = readLong(tokenInfoMemorySegment, ckTokenInfoLayout, "maxRwSessionCount");
+            Long rwSessionCount = readLong(tokenInfoMemorySegment, ckTokenInfoLayout, "rwSessionCount");
+            Long maxPinLen = readLong(tokenInfoMemorySegment, ckTokenInfoLayout, "maxPinLen");
+            Long minPinLen = readLong(tokenInfoMemorySegment, ckTokenInfoLayout, "minPinLen");
+            Long totalPublicMemory = readLong(tokenInfoMemorySegment, ckTokenInfoLayout, "totalPublicMemory");
+            Long freePublicMemory = readLong(tokenInfoMemorySegment, ckTokenInfoLayout, "freePublicMemory");
+            Long totalPrivateMemory = readLong(tokenInfoMemorySegment, ckTokenInfoLayout, "totalPrivateMemory");
+            Long freePrivateMemory = readLong(tokenInfoMemorySegment, ckTokenInfoLayout, "freePrivateMemory");
+
+            // Get the hardware version
+            MemorySegment hardwareNamedMemorySegment = invokeExact(ckTokenInfoHardwareVersionHandle, tokenInfoMemorySegment);
+            byte hardwareMajor = (byte) ckVersionMajorVarHandle.get(hardwareNamedMemorySegment);
+            byte hardwareMinor = (byte) ckVersionMinorHandle.get(hardwareNamedMemorySegment);
+            CkVersion hardwareVersion = new CkVersion(hardwareMajor, hardwareMinor);
+
+            // Get the firmware version
+            MemorySegment firmwareNamedMemorySegment = invokeExact(ckTokenInfoFirmwareVersionHandle, tokenInfoMemorySegment);
+            byte firmwareMajor = (byte) ckVersionMajorVarHandle.get(firmwareNamedMemorySegment);
+            byte firmwareMinor = (byte) ckVersionMinorHandle.get(firmwareNamedMemorySegment);
+            CkVersion firmwareVersion = new CkVersion(firmwareMajor, firmwareMinor);
+
+            // Get the time
+            String utcTime = readFixedString(tokenInfoMemorySegment, ckTokenInfoLayout, "utcTime");
+
+            // Return the token info
+            return new CkTokenInfo(
+                label,
+                manufacturerId,
+                model,
+                serialNumber,
+                flags,
+                maxSessionCount,
+                sessionCount,
+                maxRwSessionCount,
+                rwSessionCount,
+                maxPinLen,
+                minPinLen,
+                totalPublicMemory,
+                freePublicMemory,
+                totalPrivateMemory,
+                freePrivateMemory,
+                hardwareVersion,
+                firmwareVersion,
+                utcTime
+            );
+        } catch (Throwable throwable) {
+            throw new Pkcs11Exception("C_GetTokenInfo failed: " + throwable.getMessage(), throwable);
         }
     }
 
     /**
-     * Open a new session.
+     * Opens a connection between an application and a particular token or sets up an application callback for token insertion.
      *
      * @param slotId ID of the slot
      * @param flags  Session flags
@@ -157,38 +355,68 @@ public class Pkcs11Library {
      */
     public long C_OpenSession(long slotId, long flags) throws Pkcs11Exception {
         try (Arena arena = Arena.ofConfined()) {
+            // Allocate all values
+            MemorySegment pApplicationMemorySegment = MemorySegment.NULL;
+            MemorySegment notifyMemorySegment = MemorySegment.NULL;
+            MemorySegment sessionIdMemorySegment = allocateLong(arena);
+
             // Invoke the function
-            OpenSessionFunction function = new OpenSessionFunction(linker, loaderLookup, template);
-            return function.invokeFunction(arena, slotId, flags);
+            FunctionDescriptor functionDescriptor = FunctionDescriptor.of(JAVA_INT, JAVA_INT, JAVA_INT, ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)), ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)), ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)));
+            MethodHandle methodHandle = downCallHandle("C_OpenSession", functionDescriptor);
+            CkResult ckResult = CkResult.valueOf((int) methodHandle.invokeExact((int) slotId, (int) flags, pApplicationMemorySegment, notifyMemorySegment, sessionIdMemorySegment));
+            if (ckResult != CkResult.CKR_OK) {
+                throw new Pkcs11Exception("C_OpenSession failed", ckResult);
+            }
+
+            // Get and return the session ID
+            return readLong(sessionIdMemorySegment);
+        } catch (Throwable throwable) {
+            throw new Pkcs11Exception("C_OpenSession failed: " + throwable.getMessage(), throwable);
         }
     }
 
     /**
-     * Close an existing session.
+     * Closes a session.
      *
      * @param sessionId ID of the session
      * @throws Pkcs11Exception Thrown if the session does not exist or can't be closed
      */
     public void C_CloseSession(long sessionId) throws Pkcs11Exception {
-        // Invoke the function
-        CloseSessionFunction function = new CloseSessionFunction(linker, loaderLookup, template);
-        function.invokeFunction(sessionId);
+        try {
+            // Invoke the function
+            FunctionDescriptor functionDescriptor = FunctionDescriptor.of(JAVA_INT, JAVA_INT);
+            MethodHandle methodHandle = downCallHandle("C_CloseSession", functionDescriptor);
+            CkResult ckResult = CkResult.valueOf((int) methodHandle.invokeExact((int) sessionId));
+            if (ckResult != CkResult.CKR_OK) {
+                throw new Pkcs11Exception("C_CloseSession failed", ckResult);
+            }
+        } catch (Throwable throwable) {
+            throw new Pkcs11Exception("C_CloseSession failed: " + throwable.getMessage(), throwable);
+        }
     }
 
     /**
-     * Close all existing sessions for the slot.
+     * Closes all sessions with a token.
      *
      * @param slotId ID of the slot
      * @throws Pkcs11Exception Thrown if the slot does not exist or the sessions can't be closed
      */
     public void C_CloseAllSessions(long slotId) throws Pkcs11Exception {
-        // Invoke the function
-        CloseAllSessionFunction function = new CloseAllSessionFunction(linker, loaderLookup, template);
-        function.invokeFunction(slotId);
+        try {
+            // Invoke the function
+            FunctionDescriptor functionDescriptor = FunctionDescriptor.of(JAVA_INT, JAVA_INT);
+            MethodHandle methodHandle = downCallHandle("C_CloseAllSessions", functionDescriptor);
+            CkResult ckResult = CkResult.valueOf((int) methodHandle.invokeExact((int) slotId));
+            if (ckResult != CkResult.CKR_OK) {
+                throw new Pkcs11Exception("C_CloseAllSessions failed", ckResult);
+            }
+        } catch (Throwable throwable) {
+            throw new Pkcs11Exception("C_CloseAllSessions failed: " + throwable.getMessage(), throwable);
+        }
     }
 
     /**
-     * Get the session information.
+     * Obtains information about the session.
      *
      * @param sessionId ID of the session
      * @return Session information
@@ -196,14 +424,44 @@ public class Pkcs11Library {
      */
     public CkSessionInfo C_GetSessionInfo(long sessionId) throws Pkcs11Exception {
         try (Arena arena = Arena.ofConfined()) {
+            // Allocate the layout
+            MemorySegment sessionInfoMemorySegment = arena.allocate(ckSessionInfoLayout);
+
             // Invoke the function
-            GetSessionInfoFunction function = new GetSessionInfoFunction(linker, loaderLookup, template);
-            return function.invokeFunction(arena, sessionId);
+            FunctionDescriptor functionDescriptor = FunctionDescriptor.of(JAVA_INT, JAVA_INT, ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)));
+            MethodHandle methodHandle = downCallHandle("C_GetSessionInfo", functionDescriptor);
+            CkResult ckResult = CkResult.valueOf((int) methodHandle.invokeExact((int) sessionId, sessionInfoMemorySegment));
+            if (ckResult != CkResult.CKR_OK) {
+                throw new Pkcs11Exception("C_GetSessionInfo failed", ckResult);
+            }
+
+            // Get the slot ID
+            Long slotId = readLong(sessionInfoMemorySegment, ckSessionInfoLayout, "slotId");
+
+            // Get the state
+            long state = readLong(sessionInfoMemorySegment, ckSessionInfoLayout, "state");
+            CkSessionState sessionStateEnum = CkSessionState.valueOf(state);
+
+            // Get the flags
+            Long flags = readLong(sessionInfoMemorySegment, ckSessionInfoLayout, "flags");
+
+            // Get the device error
+            Long deviceError = readLong(sessionInfoMemorySegment, ckSessionInfoLayout, "deviceError");
+
+            // Return the session info
+            return new CkSessionInfo(
+                slotId,
+                sessionStateEnum,
+                flags,
+                deviceError
+            );
+        } catch (Throwable throwable) {
+            throw new Pkcs11Exception("C_GetSessionInfo failed: " + throwable.getMessage(), throwable);
         }
     }
 
     /**
-     * Log a user into the token.
+     * Logs into a token.
      *
      * @param sessionId  ID of the session
      * @param ckUserType Type of the user
@@ -212,22 +470,42 @@ public class Pkcs11Library {
      */
     public void C_Login(long sessionId, CkUserType ckUserType, String pinOrPuk) throws Pkcs11Exception {
         try (Arena arena = Arena.ofConfined()) {
+            // Convert the user type
+            long userType = ckUserType.value;
+
+            // Convert the PIN/PUK or use null for a token with a protected authentication path
+            MemorySegment pinOrPukMemorySegment = pinOrPuk != null ? arena.allocateArray(ValueLayout.JAVA_BYTE, pinOrPuk.getBytes(StandardCharsets.US_ASCII)) : MemorySegment.NULL;
+
             // Invoke the function
-            LoginFunction function = new LoginFunction(linker, loaderLookup, template);
-            function.invokeFunction(arena, sessionId, ckUserType, pinOrPuk);
+            FunctionDescriptor functionDescriptor = FunctionDescriptor.of(JAVA_INT, JAVA_INT, JAVA_INT, ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)), JAVA_INT);
+            MethodHandle methodHandle = downCallHandle("C_Login", functionDescriptor);
+            CkResult ckResult = CkResult.valueOf((int) methodHandle.invokeExact((int) sessionId, (int) userType, pinOrPukMemorySegment, (int) pinOrPukMemorySegment.byteSize()));
+            if (ckResult != CkResult.CKR_OK) {
+                throw new Pkcs11Exception("C_Login failed", ckResult);
+            }
+        } catch (Throwable throwable) {
+            throw new Pkcs11Exception("C_Login failed: " + throwable.getMessage(), throwable);
         }
     }
 
     /**
-     * Log a user out of the token.
+     * Logs out from a token.
      *
      * @param sessionId ID of the session
      * @throws Pkcs11Exception Thrown if the session does not exist or an error during logout
      */
     public void C_Logout(long sessionId) throws Pkcs11Exception {
-        // Invoke the function
-        LogoutFunction function = new LogoutFunction(linker, loaderLookup, template);
-        function.invokeFunction(sessionId);
+        try {
+            // Invoke the function
+            FunctionDescriptor functionDescriptor = FunctionDescriptor.of(JAVA_INT, JAVA_INT);
+            MethodHandle methodHandle = downCallHandle("C_Logout", functionDescriptor);
+            CkResult ckResult = CkResult.valueOf((int) methodHandle.invokeExact((int) sessionId));
+            if (ckResult != CkResult.CKR_OK) {
+                throw new Pkcs11Exception("C_Login failed", ckResult);
+            }
+        } catch (Throwable throwable) {
+            throw new Pkcs11Exception("C_Logout failed: " + throwable.getMessage(), throwable);
+        }
     }
 
     /**
@@ -240,9 +518,21 @@ public class Pkcs11Library {
      */
     public long C_GetObjectSize(long sessionId, long objectHandleId) throws Pkcs11Exception {
         try (Arena arena = Arena.ofConfined()) {
+            // Allocate a pointer for the object size
+            MemorySegment objectSizeMemorySegment = allocateLong(arena);
+
             // Invoke the function
-            GetObjectSizeFunction function = new GetObjectSizeFunction(linker, loaderLookup, template);
-            return function.invokeFunction(arena, sessionId, objectHandleId);
+            FunctionDescriptor functionDescriptor = FunctionDescriptor.of(JAVA_INT, JAVA_INT, JAVA_INT, ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)));
+            MethodHandle methodHandle = downCallHandle("C_GetObjectSize", functionDescriptor);
+            CkResult ckResult = CkResult.valueOf((int) methodHandle.invokeExact((int) sessionId, (int) objectHandleId, objectSizeMemorySegment));
+            if (ckResult != CkResult.CKR_OK) {
+                throw new Pkcs11Exception("C_GetObjectSize failed", ckResult);
+            }
+
+            // Return the object size
+            return readLong(objectSizeMemorySegment);
+        } catch (Throwable throwable) {
+            throw new Pkcs11Exception("C_GetObjectSize failed: " + throwable.getMessage(), throwable);
         }
     }
 
@@ -253,13 +543,66 @@ public class Pkcs11Library {
      * @param objectHandleId ID of the object handle
      * @param attributes     Attributes to read
      * @return Attribute values
-     * @throws Pkcs11Exception Thrown if the session/object do not exist or the attributes can't be read
+     * @throws Pkcs11Exception Thrown if the session does not exist or the attributes can't be read
      */
     public List<byte[]> C_GetAttributeValue(long sessionId, long objectHandleId, List<CkAttribute> attributes) throws Pkcs11Exception {
         try (Arena arena = Arena.ofConfined()) {
-            // Invoke the function
-            GetAttributeValueFunction function = new GetAttributeValueFunction(linker, loaderLookup, template);
-            return function.invokeFunction(arena, sessionId, objectHandleId, attributes);
+            // Define the function
+            FunctionDescriptor functionDescriptor = FunctionDescriptor.of(JAVA_INT, JAVA_INT, JAVA_INT, ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)), JAVA_INT);
+            MethodHandle methodHandle = downCallHandle("C_GetAttributeValue", functionDescriptor);
+
+            // Create a struct array with the attributes
+            MemorySegment attributesMemorySegment = arena.allocate(MemoryLayout.sequenceLayout(attributes.size(), ckAttributeLayout));
+
+            // Add all attributes
+            for (int i = 0; i < attributes.size(); i++) {
+                // Get the attribute
+                CkAttribute ckAttribute = attributes.get(i);
+                ckAttributeTypeHandle.set(attributesMemorySegment.asSlice(i * ckAttributeLayout.byteSize()), ckAttribute.value);
+                ckAttributePValueHandle.set(attributesMemorySegment.asSlice(i * ckAttributeLayout.byteSize()), MemorySegment.NULL);
+                ckAttributeValueLenHandle.set(attributesMemorySegment.asSlice(i * ckAttributeLayout.byteSize()), 0);
+            }
+
+            // Invoke the function to get the sizes we have to allocate
+            CkResult ckResult = CkResult.valueOf((int) methodHandle.invokeExact((int) sessionId, (int) objectHandleId, attributesMemorySegment, 1));
+            if (ckResult != CkResult.CKR_OK) {
+                throw new Pkcs11Exception("C_GetAttributeValue failed", ckResult);
+            }
+
+            // Allocate the buffer for all attribute values
+            List<MemorySegment> allocatedMemorySegments = new ArrayList<>(attributes.size());
+            for (int i = 0; i < attributes.size(); i++) {
+                // Get the attribute size
+                long size = 2000;
+
+                // Allocate the attribute value
+                MemorySegment attributeValueMemorySegment = arena.allocateArray(JAVA_BYTE, size);
+                allocatedMemorySegments.add(attributeValueMemorySegment);
+
+                // Set the attribute value pointer
+                ckAttributePValueHandle.set(attributesMemorySegment.asSlice(i * ckAttributeLayout.byteSize()), attributeValueMemorySegment);
+                ckAttributeValueLenHandle.set(attributesMemorySegment.asSlice(i * ckAttributeLayout.byteSize()), (int) attributeValueMemorySegment.byteSize());
+            }
+
+            // Invoke the function to get the attribute values
+            ckResult = CkResult.valueOf((int) methodHandle.invokeExact((int) sessionId, (int) objectHandleId, attributesMemorySegment, 1));
+            if (ckResult != CkResult.CKR_OK) {
+                throw new Pkcs11Exception("C_GetAttributeValue failed", ckResult);
+            }
+
+            // Convert all values
+            List<byte[]> returnValues = new ArrayList<>(attributes.size());
+            for (int i = 0; i < attributes.size(); i++) {
+                byte[] data = readBytes(allocatedMemorySegments.get(i));
+                long value = (long) ckAttributeValueLenHandle.get(attributesMemorySegment.asSlice(i * ckAttributeLayout.byteSize()));
+                byte[] realData = Arrays.copyOf(data, (int) value);
+                returnValues.add(realData);
+            }
+
+            // Return the values
+            return returnValues;
+        } catch (Throwable throwable) {
+            throw new Pkcs11Exception("C_GetAttributeValue failed: " + throwable.getMessage(), throwable);
         }
     }
 
@@ -272,9 +615,41 @@ public class Pkcs11Library {
      */
     public void C_FindObjectsInit(long sessionId, List<CkAttributeValue> searchTemplate) throws Pkcs11Exception {
         try (Arena arena = Arena.ofConfined()) {
+            // Create a struct array with the attributes
+            MemorySegment attributesMemorySegment = arena.allocate(MemoryLayout.sequenceLayout(searchTemplate.size(), ckAttributeLayout));
+
+            // Fill in the values
+            for (int i = 0; i < searchTemplate.size(); i++) {
+                // Get the attribute
+                CkAttributeValue ckAttribute = searchTemplate.get(i);
+
+                // Set the type
+                ckAttributeTypeHandle.set(attributesMemorySegment.asSlice(i * ckAttributeLayout.byteSize()), ckAttribute.type().value);
+
+                // Set the value
+                if (ckAttribute.pValue() != null) {
+                    // Allocate the object class
+                    MemorySegment objectClassMemorySegment = allocateLong(arena, ckAttribute.pValue());
+
+                    // Set the value and length
+                    ckAttributePValueHandle.set(attributesMemorySegment.asSlice(i * ckAttributeLayout.byteSize()), objectClassMemorySegment);
+                    ckAttributeValueLenHandle.set(attributesMemorySegment.asSlice(i * ckAttributeLayout.byteSize()), (int) objectClassMemorySegment.byteSize());
+                } else {
+                    // Set a missing value with zero length
+                    ckAttributePValueHandle.set(attributesMemorySegment.asSlice(i * ckAttributeLayout.byteSize()), MemorySegment.NULL);
+                    ckAttributeValueLenHandle.set(attributesMemorySegment.asSlice(i * ckAttributeLayout.byteSize()), 0);
+                }
+            }
+
             // Invoke the function
-            FindObjectsInitFunction function = new FindObjectsInitFunction(linker, loaderLookup, template);
-            function.invokeFunction(arena, sessionId, searchTemplate);
+            FunctionDescriptor functionDescriptor = FunctionDescriptor.of(JAVA_INT, JAVA_INT, ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)), JAVA_INT);
+            MethodHandle methodHandle = downCallHandle("C_FindObjectsInit", functionDescriptor);
+            CkResult ckResult = CkResult.valueOf((int) methodHandle.invokeExact((int) sessionId, attributesMemorySegment, 1));
+            if (ckResult != CkResult.CKR_OK) {
+                throw new Pkcs11Exception("C_FindObjectsInit failed", ckResult);
+            }
+        } catch (Throwable throwable) {
+            throw new Pkcs11Exception("C_FindObjectsInit failed: " + throwable.getMessage(), throwable);
         }
     }
 
@@ -288,9 +663,33 @@ public class Pkcs11Library {
      */
     public List<Long> C_FindObjects(long sessionId, int maxObjects) throws Pkcs11Exception {
         try (Arena arena = Arena.ofConfined()) {
+            // Allocate the object count
+            MemorySegment objectCountMemorySegment = allocateLong(arena);
+
+            // Allocate the object handle array
+            MemorySegment objectHandlesMemorySegment = allocateLongArray(arena, maxObjects);
+
             // Invoke the function
-            FindObjectsFunction function = new FindObjectsFunction(linker, loaderLookup, template);
-            return function.invokeFunction(arena, sessionId, maxObjects);
+            FunctionDescriptor functionDescriptor = FunctionDescriptor.of(JAVA_INT, JAVA_INT, ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)), JAVA_INT, ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)));
+            MethodHandle methodHandle = downCallHandle("C_FindObjects", functionDescriptor);
+            CkResult ckResult = CkResult.valueOf((int) methodHandle.invokeExact((int) sessionId, objectHandlesMemorySegment, maxObjects, objectCountMemorySegment));
+            if (ckResult != CkResult.CKR_OK) {
+                throw new Pkcs11Exception("C_FindObjects failed", ckResult);
+            }
+
+            // Get all object handles
+            int foundObjectHandles = (int) readLong(objectCountMemorySegment);
+            List<Long> objectIds = new ArrayList<>(foundObjectHandles);
+            for (int i = 0; i < foundObjectHandles; i++) {
+                // Get the object handle
+                long foundObjectHandle = readLongFromArray(objectHandlesMemorySegment, i);
+                objectIds.add(foundObjectHandle);
+            }
+
+            // Return the object IDs
+            return objectIds;
+        } catch (Throwable throwable) {
+            throw new Pkcs11Exception("C_FindObjects failed: " + throwable.getMessage(), throwable);
         }
     }
 
@@ -301,9 +700,17 @@ public class Pkcs11Library {
      * @throws Pkcs11Exception Thrown if the session does not exist or the search operation can't be finalized
      */
     public void C_FindObjectsFinal(long sessionId) throws Pkcs11Exception {
-        // Invoke the function
-        FindObjectsFinalFunction function = new FindObjectsFinalFunction(linker, loaderLookup, template);
-        function.invokeFunction(sessionId);
+        try {
+            // Invoke the function
+            FunctionDescriptor functionDescriptor = FunctionDescriptor.of(JAVA_INT, JAVA_INT);
+            MethodHandle methodHandle = downCallHandle("C_FindObjectsFinal", functionDescriptor);
+            CkResult ckResult = CkResult.valueOf((int) methodHandle.invokeExact((int) sessionId));
+            if (ckResult != CkResult.CKR_OK) {
+                throw new Pkcs11Exception("C_FindObjectsFinal failed", ckResult);
+            }
+        } catch (Throwable throwable) {
+            throw new Pkcs11Exception("C_FindObjectsFinal failed: " + throwable.getMessage(), throwable);
+        }
     }
 
     /**
@@ -315,9 +722,21 @@ public class Pkcs11Library {
      */
     public void C_DigestInit(long sessionId, CkMechanism mechanism) throws Pkcs11Exception {
         try (Arena arena = Arena.ofConfined()) {
+            // Allocate the mechanism
+            MemorySegment mechanismMemorySegment = arena.allocate(ckMechanismLayout);
+            ckMechanismMechanismHandle.set(mechanismMemorySegment, mechanism.value);
+            ckMechanismPParameterHandle.set(mechanismMemorySegment, MemorySegment.NULL);
+            ckMechanismParameterLenHandle.set(mechanismMemorySegment, 0);
+
             // Invoke the function
-            DigestInitFunction function = new DigestInitFunction(linker, loaderLookup, template);
-            function.invokeFunction(arena, sessionId, mechanism);
+            FunctionDescriptor functionDescriptor = FunctionDescriptor.of(JAVA_INT, JAVA_INT, ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)));
+            MethodHandle methodHandle = downCallHandle("C_DigestInit", functionDescriptor);
+            CkResult ckResult = CkResult.valueOf((int) methodHandle.invokeExact((int) sessionId, mechanismMemorySegment));
+            if (ckResult != CkResult.CKR_OK) {
+                throw new Pkcs11Exception("C_DigestInit failed", ckResult);
+            }
+        } catch (Throwable throwable) {
+            throw new Pkcs11Exception("C_DigestInit failed: " + throwable.getMessage(), throwable);
         }
     }
 
@@ -331,9 +750,37 @@ public class Pkcs11Library {
      */
     public byte[] C_Digest(long sessionId, byte[] data) throws Pkcs11Exception {
         try (Arena arena = Arena.ofConfined()) {
-            // Invoke the function
-            DigestFunction function = new DigestFunction(linker, loaderLookup, template);
-            return function.invokeFunction(arena, sessionId, data);
+            // Define the function
+            FunctionDescriptor functionDescriptor = FunctionDescriptor.of(JAVA_INT, JAVA_INT, ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)), JAVA_INT, ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)), ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)));
+            MethodHandle methodHandle = downCallHandle("C_Digest", functionDescriptor);
+
+            // Allocate an array for the data
+            MemorySegment messageMemorySegment = arena.allocateArray(JAVA_BYTE, data);
+
+            // Allocate a value to hold the digest length
+            MemorySegment digestMemorySegment = MemorySegment.NULL;
+            MemorySegment digestLengthMemorySegment = allocateLong(arena);
+
+            // Invoke the function to get the digest length
+            CkResult ckResult = CkResult.valueOf((int) methodHandle.invokeExact((int) sessionId, messageMemorySegment, (int) messageMemorySegment.byteSize(), digestMemorySegment, digestLengthMemorySegment));
+            if (ckResult != CkResult.CKR_OK) {
+                throw new Pkcs11Exception("C_Digest failed", ckResult);
+            }
+
+            // Allocate the digest buffer
+            int digestLength = (int) readLong(digestLengthMemorySegment);
+            digestMemorySegment = arena.allocateArray(JAVA_BYTE, digestLength);
+
+            // Invoke the function to digest the data
+            ckResult = CkResult.valueOf((int) methodHandle.invokeExact((int) sessionId, messageMemorySegment, (int) messageMemorySegment.byteSize(), digestMemorySegment, digestLengthMemorySegment));
+            if (ckResult != CkResult.CKR_OK) {
+                throw new Pkcs11Exception("C_Digest failed", ckResult);
+            }
+
+            // Return the digest
+            return readBytes(digestMemorySegment);
+        } catch (Throwable throwable) {
+            throw new Pkcs11Exception("C_Digest failed: " + throwable.getMessage(), throwable);
         }
     }
 
@@ -346,9 +793,18 @@ public class Pkcs11Library {
      */
     public void C_DigestUpdate(long sessionId, byte[] data) throws Pkcs11Exception {
         try (Arena arena = Arena.ofConfined()) {
-            // Invoke the function
-            DigestUpdateFunction function = new DigestUpdateFunction(linker, loaderLookup, template);
-            function.invokeFunction(arena, sessionId, data);
+            // Allocate an array for the data
+            MemorySegment messageMemorySegment = arena.allocateArray(JAVA_BYTE, data);
+
+            // Invoke the function to digest the data
+            FunctionDescriptor functionDescriptor = FunctionDescriptor.of(JAVA_INT, JAVA_INT, ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)), JAVA_INT);
+            MethodHandle methodHandle = downCallHandle("C_DigestUpdate", functionDescriptor);
+            CkResult ckResult = CkResult.valueOf((int) methodHandle.invokeExact((int) sessionId, messageMemorySegment, (int) messageMemorySegment.byteSize()));
+            if (ckResult != CkResult.CKR_OK) {
+                throw new Pkcs11Exception("C_DigestUpdate failed", ckResult);
+            }
+        } catch (Throwable throwable) {
+            throw new Pkcs11Exception("C_DigestUpdate failed: " + throwable.getMessage(), throwable);
         }
     }
 
@@ -361,9 +817,34 @@ public class Pkcs11Library {
      */
     public byte[] C_DigestFinal(long sessionId) throws Pkcs11Exception {
         try (Arena arena = Arena.ofConfined()) {
-            // Invoke the function
-            DigestFinalFunction function = new DigestFinalFunction(linker, loaderLookup, template);
-            return function.invokeFunction(arena, sessionId);
+            // Define the function
+            FunctionDescriptor functionDescriptor = FunctionDescriptor.of(JAVA_INT, JAVA_INT, ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)), ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)));
+            MethodHandle methodHandle = downCallHandle("C_DigestFinal", functionDescriptor);
+
+            // Allocate a value to hold the digest length
+            MemorySegment digestMemorySegment = MemorySegment.NULL;
+            MemorySegment digestLengthMemorySegment = allocateLong(arena);
+
+            // Invoke the function to get the digest length
+            CkResult ckResult = CkResult.valueOf((int) methodHandle.invokeExact((int) sessionId, digestMemorySegment, digestLengthMemorySegment));
+            if (ckResult != CkResult.CKR_OK) {
+                throw new Pkcs11Exception("C_DigestFinal failed", ckResult);
+            }
+
+            // Allocate the digest buffer
+            int digestLength = (int) readLong(digestLengthMemorySegment);
+            digestMemorySegment = arena.allocateArray(JAVA_BYTE, digestLength);
+
+            // Invoke the function to digest the data
+            ckResult = CkResult.valueOf((int) methodHandle.invokeExact((int) sessionId, digestMemorySegment, digestLengthMemorySegment));
+            if (ckResult != CkResult.CKR_OK) {
+                throw new Pkcs11Exception("C_DigestFinal failed", ckResult);
+            }
+
+            // Return the digest
+            return readBytes(digestMemorySegment);
+        } catch (Throwable throwable) {
+            throw new Pkcs11Exception("C_DigestFinal failed: " + throwable.getMessage(), throwable);
         }
     }
 
@@ -377,14 +858,26 @@ public class Pkcs11Library {
      */
     public void C_SignInit(long sessionId, CkMechanism mechanism, long keyHandleId) throws Pkcs11Exception {
         try (Arena arena = Arena.ofConfined()) {
+            // Allocate the mechanism
+            MemorySegment mechanismMemorySegment = arena.allocate(ckMechanismLayout);
+            ckMechanismMechanismHandle.set(mechanismMemorySegment, mechanism.value);
+            ckMechanismPParameterHandle.set(mechanismMemorySegment, MemorySegment.NULL);
+            ckMechanismParameterLenHandle.set(mechanismMemorySegment, 0);
+
             // Invoke the function
-            SignInitFunction function = new SignInitFunction(linker, loaderLookup, template);
-            function.invokeFunction(arena, sessionId, mechanism, keyHandleId);
+            FunctionDescriptor functionDescriptor = FunctionDescriptor.of(JAVA_INT, JAVA_INT, ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)), JAVA_INT);
+            MethodHandle methodHandle = downCallHandle("C_SignInit", functionDescriptor);
+            CkResult ckResult = CkResult.valueOf((int) methodHandle.invokeExact((int) sessionId, mechanismMemorySegment, (int) keyHandleId));
+            if (ckResult != CkResult.CKR_OK) {
+                throw new Pkcs11Exception("C_SignInit failed", ckResult);
+            }
+        } catch (Throwable throwable) {
+            throw new Pkcs11Exception("C_SignInit failed: " + throwable.getMessage(), throwable);
         }
     }
 
     /**
-     * Sign single-part data.
+     * Signs single-part data.
      *
      * @param sessionId     ID of the session
      * @param message       Message to sign
@@ -394,14 +887,32 @@ public class Pkcs11Library {
      */
     public byte[] C_Sign(long sessionId, byte[] message, int signatureSize) throws Pkcs11Exception {
         try (Arena arena = Arena.ofConfined()) {
+            // Allocate an array for the message
+            MemorySegment messageMemorySegment = arena.allocateArray(JAVA_BYTE, message);
+
+            // Allocate an array for the signed data and a pointer for the signature length
+            MemorySegment signedDataMemorySegment = arena.allocateArray(JAVA_BYTE, signatureSize);
+            MemorySegment signedDataLengthMemorySegment = allocateLong(arena, signedDataMemorySegment.byteSize());
+
             // Invoke the function
-            SignFunction function = new SignFunction(linker, loaderLookup, template);
-            return function.invokeFunction(arena, sessionId, message, signatureSize);
+            FunctionDescriptor functionDescriptor = FunctionDescriptor.of(JAVA_INT, JAVA_INT, ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)), JAVA_INT, ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)), ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)));
+            MethodHandle methodHandle = downCallHandle("C_Sign", functionDescriptor);
+            CkResult ckResult = CkResult.valueOf((int) methodHandle.invokeExact((int) sessionId, messageMemorySegment, (int) messageMemorySegment.byteSize(), signedDataMemorySegment, signedDataLengthMemorySegment));
+            if (ckResult != CkResult.CKR_OK) {
+                throw new Pkcs11Exception("C_Sign failed", ckResult);
+            }
+
+            // Return the signed message
+            int signedMessageLength = (int) readLong(signedDataLengthMemorySegment);
+            byte[] signedMessage = readBytes(signedDataMemorySegment);
+            return Arrays.copyOf(signedMessage, signedMessageLength);
+        } catch (Throwable throwable) {
+            throw new Pkcs11Exception("C_Sign failed: " + throwable.getMessage(), throwable);
         }
     }
 
     /**
-     * Mix in additional seed material to the random number generator.
+     * Mixes in additional seed material to the random number generator.
      *
      * @param sessionId ID of the session
      * @param seed      Additional seed material
@@ -409,14 +920,23 @@ public class Pkcs11Library {
      */
     public void C_SeedRandom(long sessionId, byte[] seed) throws Pkcs11Exception {
         try (Arena arena = Arena.ofConfined()) {
+            // Allocate the seed buffer
+            MemorySegment seedBufferMemorySegment = arena.allocateArray(ValueLayout.JAVA_BYTE, seed);
+
             // Invoke the function
-            SeedRandomFunction function = new SeedRandomFunction(linker, loaderLookup, template);
-            function.invokeFunction(arena, sessionId, seed);
+            FunctionDescriptor functionDescriptor = FunctionDescriptor.of(JAVA_INT, JAVA_INT, ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)), JAVA_INT);
+            MethodHandle methodHandle = downCallHandle("C_SeedRandom", functionDescriptor);
+            CkResult ckResult = CkResult.valueOf((int) methodHandle.invokeExact((int) sessionId, seedBufferMemorySegment, (int) seedBufferMemorySegment.byteSize()));
+            if (ckResult != CkResult.CKR_OK) {
+                throw new Pkcs11Exception("C_SeedRandom failed", ckResult);
+            }
+        } catch (Throwable throwable) {
+            throw new Pkcs11Exception("C_SeedRandom failed: " + throwable.getMessage(), throwable);
         }
     }
 
     /**
-     * Generates random data for the given length.
+     * Generates random data.
      *
      * @param sessionId ID of the session
      * @param length    Length of the random data
@@ -425,9 +945,21 @@ public class Pkcs11Library {
      */
     public byte[] C_GenerateRandom(long sessionId, int length) throws Pkcs11Exception {
         try (Arena arena = Arena.ofConfined()) {
+            // Allocate the random buffer
+            MemorySegment randomBufferMemorySegment = arena.allocateArray(ValueLayout.JAVA_BYTE, length);
+
             // Invoke the function
-            GenerateRandomFunction function = new GenerateRandomFunction(linker, loaderLookup, template);
-            return function.invokeFunction(arena, sessionId, length);
+            FunctionDescriptor functionDescriptor = FunctionDescriptor.of(JAVA_INT, JAVA_INT, ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)), JAVA_INT);
+            MethodHandle methodHandle = downCallHandle("C_GenerateRandom", functionDescriptor);
+            CkResult ckResult = CkResult.valueOf((int) methodHandle.invokeExact((int) sessionId, randomBufferMemorySegment, (int) randomBufferMemorySegment.byteSize()));
+            if (ckResult != CkResult.CKR_OK) {
+                throw new Pkcs11Exception("C_GenerateRandom failed", ckResult);
+            }
+
+            // Convert and return the buffer
+            return readBytes(randomBufferMemorySegment);
+        } catch (Throwable throwable) {
+            throw new Pkcs11Exception("C_GenerateRandom failed: " + throwable.getMessage(), throwable);
         }
     }
 }

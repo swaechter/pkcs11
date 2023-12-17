@@ -3,7 +3,6 @@ package ch.swaechter.pkcs11;
 import ch.swaechter.pkcs11.headers.CkInfo;
 import ch.swaechter.pkcs11.objects.Pkcs11Info;
 import ch.swaechter.pkcs11.objects.Pkcs11Slot;
-import ch.swaechter.pkcs11.templates.Template;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -23,15 +22,14 @@ public class Pkcs11Module extends Pkcs11Container implements Closeable {
     private Boolean initialized;
 
     /**
-     * Create a new PKCS11 module and load the givenPKCS11 middleware via library.
+     * Create a new PKCS11 module and load the given PKCS11 middleware via library.
      *
      * @param libraryName Name of the PKCS11 middleware that has to be on the library path
-     * @param template    Template that provides the architecture specific memory layouts
      * @throws Pkcs11Exception Thrown if the PKCS11 middleware can't be loaded
      */
-    public Pkcs11Module(String libraryName, Template template) throws Pkcs11Exception {
+    public Pkcs11Module(String libraryName) throws Pkcs11Exception {
         // Create the PKCS11 library
-        super(new Pkcs11Library(libraryName, template));
+        super(Pkcs11Library.detectPlatform(libraryName));
         this.initialized = false;
     }
 

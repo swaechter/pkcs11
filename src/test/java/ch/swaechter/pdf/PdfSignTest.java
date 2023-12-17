@@ -1,14 +1,11 @@
 package ch.swaechter.pdf;
 
 import ch.swaechter.pkcs11.Pkcs11Module;
-import ch.swaechter.pkcs11.Pkcs11Template;
+import ch.swaechter.pkcs11.Pkcs11TestTemplate;
 import ch.swaechter.pkcs11.headers.CkUserType;
 import ch.swaechter.pkcs11.objects.Pkcs11Session;
 import ch.swaechter.pkcs11.objects.Pkcs11Slot;
 import ch.swaechter.pkcs11.objects.Pkcs11Token;
-import ch.swaechter.pkcs11.templates.AlignedLinuxTemplate;
-import ch.swaechter.pkcs11.templates.PackedWindowsTemplate;
-import ch.swaechter.pkcs11.templates.Template;
 import com.itextpdf.forms.fields.properties.SignedAppearanceText;
 import com.itextpdf.forms.form.element.SignatureFieldAppearance;
 import com.itextpdf.kernel.geom.Rectangle;
@@ -25,6 +22,11 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * Test the signing of a PDF file.
+ *
+ * @author Simon Wächter
+ */
 public class PdfSignTest {
 
     @Test
@@ -34,12 +36,8 @@ public class PdfSignTest {
         File outputFile = new File("src/test/resources/Document_Signed.pdf");
         assertTrue(inputFile.isFile());
 
-        // Create the template
-        Template template = Template.detectTemplate();
-        assertTrue(template instanceof PackedWindowsTemplate || template instanceof AlignedLinuxTemplate);
-
-        // Work with the module
-        try (Pkcs11Module pkcs11Module = new Pkcs11Module(Pkcs11Template.LIBRARY_NAME, template)) {
+        // Create the PKCS11 module
+        try (Pkcs11Module pkcs11Module = new Pkcs11Module(Pkcs11TestTemplate.LIBRARY_NAME)) {
             // Get the slot and token
             Pkcs11Slot pkcs11Slot = pkcs11Module.getSlot(0);
             Pkcs11Token pkcs11Token = pkcs11Slot.getToken();
@@ -47,7 +45,7 @@ public class PdfSignTest {
             // Open a session
             try (Pkcs11Session pkcs11Session = pkcs11Token.openSession(true, true)) {
                 // Login
-                pkcs11Session.loginUser(CkUserType.CKU_USER, Pkcs11Template.PKCS11_TOKEN_PIN);
+                pkcs11Session.loginUser(CkUserType.CKU_USER, Pkcs11TestTemplate.PKCS11_TOKEN_PIN);
 
                 // Create the PKCS11 signature
                 Pkcs11Signature pkcs11Signature = new Pkcs11Signature(pkcs11Session);

@@ -1,12 +1,12 @@
 package ch.swaechter.pkcs11;
 
 /**
- * A test template to represent a PKCS11 device. Each tester might change some values to represent his device. The given
- * value match a SafeNet eToken 5110 in FIPS mode.
+ * A test template to represent a PKCS11 device. Each tester might change some values to represent his device. This
+ * template represents a SafeNet eToken 5110 in FIPS mode.
  *
  * @author Simon Wächter
  */
-public class Pkcs11Template {
+public class Pkcs11TestTemplate {
 
     /**
      * Name of the PKCS11 library to load.
@@ -26,7 +26,7 @@ public class Pkcs11Template {
     /**
      * Private constructor
      */
-    private Pkcs11Template() {
+    private Pkcs11TestTemplate() {
         throw new RuntimeException("Invalid constructor call");
     }
 }

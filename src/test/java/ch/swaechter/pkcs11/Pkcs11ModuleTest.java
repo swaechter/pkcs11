@@ -2,9 +2,6 @@ package ch.swaechter.pkcs11;
 
 import ch.swaechter.pkcs11.headers.*;
 import ch.swaechter.pkcs11.objects.*;
-import ch.swaechter.pkcs11.templates.AlignedLinuxTemplate;
-import ch.swaechter.pkcs11.templates.PackedWindowsTemplate;
-import ch.swaechter.pkcs11.templates.Template;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -22,12 +19,8 @@ public class Pkcs11ModuleTest {
 
     @Test
     public void testWorkflow() throws Exception {
-        // Create the template
-        Template template = Template.detectTemplate();
-        assertTrue(template instanceof PackedWindowsTemplate || template instanceof AlignedLinuxTemplate);
-
-        // Work with the module
-        try (Pkcs11Module pkcs11Module = new Pkcs11Module(Pkcs11Template.LIBRARY_NAME, template)) {
+        // Create the PKCS11 module
+        try (Pkcs11Module pkcs11Module = new Pkcs11Module(Pkcs11TestTemplate.LIBRARY_NAME)) {
             // Get the library
             assertNotNull(pkcs11Module.getPkcs11Library());
 
@@ -152,11 +145,11 @@ public class Pkcs11ModuleTest {
                         assertTrue(pkcs11SessionInfo.isSerialSession());
 
                         // Login and logout as user
-                        pkcs11Session.loginUser(CkUserType.CKU_USER, Pkcs11Template.PKCS11_TOKEN_PIN);
+                        pkcs11Session.loginUser(CkUserType.CKU_USER, Pkcs11TestTemplate.PKCS11_TOKEN_PIN);
                         pkcs11Session.logoutUser();
 
                         // Login and logout as security officer
-                        pkcs11Session.loginUser(CkUserType.CKU_SO, Pkcs11Template.PKCS11_TOKEN_SO_PIN);
+                        pkcs11Session.loginUser(CkUserType.CKU_SO, Pkcs11TestTemplate.PKCS11_TOKEN_SO_PIN);
                         pkcs11Session.logoutUser();
 
                         // Try to log in via protected authentication path
@@ -176,12 +169,8 @@ public class Pkcs11ModuleTest {
 
     @Test
     public void testObjectsAndSign() throws Exception {
-        // Create the template
-        Template template = Template.detectTemplate();
-        assertTrue(template instanceof PackedWindowsTemplate || template instanceof AlignedLinuxTemplate);
-
-        // Work with the module
-        try (Pkcs11Module pkcs11Module = new Pkcs11Module(Pkcs11Template.LIBRARY_NAME, template)) {
+        // Create the PKCS11 module
+        try (Pkcs11Module pkcs11Module = new Pkcs11Module(Pkcs11TestTemplate.LIBRARY_NAME)) {
             // Get the slot and token
             Pkcs11Slot pkcs11Slot = pkcs11Module.getSlot(0);
             Pkcs11Token pkcs11Token = pkcs11Slot.getToken();
@@ -189,7 +178,7 @@ public class Pkcs11ModuleTest {
             // Open a session
             try (Pkcs11Session pkcs11Session = pkcs11Token.openSession(true, true)) {
                 // Login
-                pkcs11Session.loginUser(CkUserType.CKU_USER, Pkcs11Template.PKCS11_TOKEN_PIN);
+                pkcs11Session.loginUser(CkUserType.CKU_USER, Pkcs11TestTemplate.PKCS11_TOKEN_PIN);
 
                 // Find the private key handle
                 List<CkAttributeValue> privateKeyCkAttributeValues = new ArrayList<>();
@@ -223,12 +212,8 @@ public class Pkcs11ModuleTest {
 
     @Test
     public void testRandom() throws Exception {
-        // Create the template
-        Template template = Template.detectTemplate();
-        assertTrue(template instanceof PackedWindowsTemplate || template instanceof AlignedLinuxTemplate);
-
-        // Work with the module
-        try (Pkcs11Module pkcs11Module = new Pkcs11Module(Pkcs11Template.LIBRARY_NAME, template)) {
+        // Create the PKCS11 module
+        try (Pkcs11Module pkcs11Module = new Pkcs11Module(Pkcs11TestTemplate.LIBRARY_NAME)) {
             // Initialize the module
             pkcs11Module.initializeModule();
 

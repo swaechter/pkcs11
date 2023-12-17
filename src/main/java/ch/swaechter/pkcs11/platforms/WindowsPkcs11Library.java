@@ -1,4 +1,7 @@
-package ch.swaechter.pkcs11.templates;
+package ch.swaechter.pkcs11.platforms;
+
+import ch.swaechter.pkcs11.Pkcs11Exception;
+import ch.swaechter.pkcs11.Pkcs11Library;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.GroupLayout;
@@ -9,11 +12,18 @@ import java.lang.invoke.VarHandle;
 import static java.lang.foreign.ValueLayout.*;
 
 /**
- * Template that represents a Windows system with packed struct layouts, mostly Windows x64. Long takes 4 bytes.
+ * Create a new PKCS11 library for a Windows system that uses 4 byte longs and packed struct aligning.
  *
  * @author Simon Wächter
  */
-public class PackedWindowsTemplate extends Template {
+public class WindowsPkcs11Library extends Pkcs11Library {
+
+    /**
+     * {@inheritDoc}
+     */
+    public WindowsPkcs11Library(String libraryName) throws Pkcs11Exception {
+        super(libraryName);
+    }
 
     /**
      * {@inheritDoc}
@@ -43,7 +53,7 @@ public class PackedWindowsTemplate extends Template {
      * {@inheritDoc}
      */
     @Override
-    public long getLong(MemorySegment memorySegment) {
+    public long readLong(MemorySegment memorySegment) {
         return memorySegment.get(JAVA_INT, 0);
     }
 
@@ -51,7 +61,7 @@ public class PackedWindowsTemplate extends Template {
      * {@inheritDoc}
      */
     @Override
-    public long getLongFromArray(MemorySegment memorySegment, long index) {
+    public long readLongFromArray(MemorySegment memorySegment, long index) {
         return memorySegment.get(JAVA_INT, JAVA_INT.byteSize() * index);
     }
 
@@ -59,7 +69,7 @@ public class PackedWindowsTemplate extends Template {
      * {@inheritDoc}
      */
     @Override
-    public long getLong(MemorySegment memorySegment, GroupLayout groupLayout, String name) {
+    public long readLong(MemorySegment memorySegment, GroupLayout groupLayout, String name) {
         VarHandle varHandle = groupLayout.varHandle(MemoryLayout.PathElement.groupElement(name));
         return (int) varHandle.get(memorySegment);
     }
@@ -81,26 +91,12 @@ public class PackedWindowsTemplate extends Template {
     @Override
     protected GroupLayout buildCkInfoLayout() {
         return MemoryLayout.structLayout(
-            getCkVersionLayout().withName("cryptokiVersion"),
+            ckVersionLayout.withName("cryptokiVersion"),
             MemoryLayout.sequenceLayout(32, JAVA_BYTE).withName("manufacturerId"),
             JAVA_INT_UNALIGNED.withName("flags"),
             MemoryLayout.sequenceLayout(32, JAVA_BYTE).withName("libraryDescription"),
-            getCkVersionLayout().withName("libraryVersion")
+            ckVersionLayout.withName("libraryVersion")
         ).withName("CK_INFO");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected GroupLayout buildCkSlotInfoLayout() {
-        return MemoryLayout.structLayout(
-            MemoryLayout.sequenceLayout(64, JAVA_BYTE).withName("slotDescription"),
-            MemoryLayout.sequenceLayout(32, JAVA_BYTE).withName("manufacturerId"),
-            JAVA_INT_UNALIGNED.withName("flags"),
-            getCkVersionLayout().withName("hardwareVersion"),
-            getCkVersionLayout().withName("firmwareVersion")
-        ).withName("CK_SLOT_INFO");
     }
 
     /**
@@ -124,10 +120,24 @@ public class PackedWindowsTemplate extends Template {
             JAVA_INT_UNALIGNED.withName("freePublicMemory"),
             JAVA_INT_UNALIGNED.withName("totalPrivateMemory"),
             JAVA_INT_UNALIGNED.withName("freePrivateMemory"),
-            getCkVersionLayout().withName("hardwareVersion"),
-            getCkVersionLayout().withName("firmwareVersion"),
+            ckVersionLayout.withName("hardwareVersion"),
+            ckVersionLayout.withName("firmwareVersion"),
             MemoryLayout.sequenceLayout(16, JAVA_BYTE).withName("utcTime")
         ).withName("CK_TOKEN_INFO");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected GroupLayout buildCkSlotInfoLayout() {
+        return MemoryLayout.structLayout(
+            MemoryLayout.sequenceLayout(64, JAVA_BYTE).withName("slotDescription"),
+            MemoryLayout.sequenceLayout(32, JAVA_BYTE).withName("manufacturerId"),
+            JAVA_INT_UNALIGNED.withName("flags"),
+            ckVersionLayout.withName("hardwareVersion"),
+            ckVersionLayout.withName("firmwareVersion")
+        ).withName("CK_SLOT_INFO");
     }
 
     /**

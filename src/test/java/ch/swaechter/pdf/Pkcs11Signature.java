@@ -20,6 +20,11 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Implement the PKCS11 sign operation.
+ *
+ * @author Simon Wächter
+ */
 public class Pkcs11Signature implements IExternalSignature {
 
     private final Pkcs11Session pkcs11Session;

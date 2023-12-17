@@ -1,4 +1,7 @@
-package ch.swaechter.pkcs11.templates;
+package ch.swaechter.pkcs11.platforms;
+
+import ch.swaechter.pkcs11.Pkcs11Exception;
+import ch.swaechter.pkcs11.Pkcs11Library;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.GroupLayout;
@@ -9,11 +12,18 @@ import java.lang.invoke.VarHandle;
 import static java.lang.foreign.ValueLayout.*;
 
 /**
- * Template that represents a Linux system with 8 byte aligned struct layouts, mostly Linux x64. Long takes 8 bytes.
+ * Create a new PKCS11 library for a Linux system that uses 8 byte longs and 8 byte struct aligning.
  *
  * @author Simon Wächter
  */
-public class AlignedLinuxTemplate extends Template {
+public class LinuxPkcs11Library extends Pkcs11Library {
+
+    /**
+     * {@inheritDoc}
+     */
+    public LinuxPkcs11Library(String libraryName) throws Pkcs11Exception {
+        super(libraryName);
+    }
 
     /**
      * {@inheritDoc}
@@ -43,7 +53,7 @@ public class AlignedLinuxTemplate extends Template {
      * {@inheritDoc}
      */
     @Override
-    public long getLong(MemorySegment memorySegment) {
+    public long readLong(MemorySegment memorySegment) {
         return memorySegment.get(JAVA_LONG, 0);
     }
 
@@ -51,7 +61,7 @@ public class AlignedLinuxTemplate extends Template {
      * {@inheritDoc}
      */
     @Override
-    public long getLongFromArray(MemorySegment memorySegment, long index) {
+    public long readLongFromArray(MemorySegment memorySegment, long index) {
         return memorySegment.get(JAVA_LONG, JAVA_LONG.byteSize() * index);
     }
 
@@ -59,7 +69,7 @@ public class AlignedLinuxTemplate extends Template {
      * {@inheritDoc}
      */
     @Override
-    public long getLong(MemorySegment memorySegment, GroupLayout groupLayout, String name) {
+    public long readLong(MemorySegment memorySegment, GroupLayout groupLayout, String name) {
         VarHandle varHandle = groupLayout.varHandle(MemoryLayout.PathElement.groupElement(name));
         return (long) varHandle.get(memorySegment);
     }
@@ -81,29 +91,14 @@ public class AlignedLinuxTemplate extends Template {
     @Override
     protected GroupLayout buildCkInfoLayout() {
         return MemoryLayout.structLayout(
-            getCkVersionLayout().withName("cryptokiVersion"),
+            ckVersionLayout.withName("cryptokiVersion"),
             MemoryLayout.sequenceLayout(32, JAVA_BYTE).withName("manufacturerId"),
             MemoryLayout.paddingLayout(6),
             JAVA_LONG.withName("flags"),
             MemoryLayout.sequenceLayout(32, JAVA_BYTE).withName("libraryDescription"),
-            getCkVersionLayout().withName("libraryVersion"),
+            ckVersionLayout.withName("libraryVersion"),
             MemoryLayout.paddingLayout(2)
         ).withName("CK_INFO");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected GroupLayout buildCkSlotInfoLayout() {
-        return MemoryLayout.structLayout(
-            MemoryLayout.sequenceLayout(64, JAVA_BYTE).withName("slotDescription"),
-            MemoryLayout.sequenceLayout(32, JAVA_BYTE).withName("manufacturerId"),
-            JAVA_LONG.withName("flags"),
-            getCkVersionLayout().withName("hardwareVersion"),
-            getCkVersionLayout().withName("firmwareVersion"),
-            MemoryLayout.paddingLayout(4)
-        ).withName("CK_SLOT_INFO");
     }
 
     /**
@@ -127,11 +122,26 @@ public class AlignedLinuxTemplate extends Template {
             JAVA_LONG.withName("freePublicMemory"),
             JAVA_LONG.withName("totalPrivateMemory"),
             JAVA_LONG.withName("freePrivateMemory"),
-            getCkVersionLayout().withName("hardwareVersion"),
-            getCkVersionLayout().withName("firmwareVersion"),
+            ckVersionLayout.withName("hardwareVersion"),
+            ckVersionLayout.withName("firmwareVersion"),
             MemoryLayout.paddingLayout(4),
             MemoryLayout.sequenceLayout(16, JAVA_BYTE).withName("utcTime")
         ).withName("CK_TOKEN_INFO");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected GroupLayout buildCkSlotInfoLayout() {
+        return MemoryLayout.structLayout(
+            MemoryLayout.sequenceLayout(64, JAVA_BYTE).withName("slotDescription"),
+            MemoryLayout.sequenceLayout(32, JAVA_BYTE).withName("manufacturerId"),
+            JAVA_LONG.withName("flags"),
+            ckVersionLayout.withName("hardwareVersion"),
+            ckVersionLayout.withName("firmwareVersion"),
+            MemoryLayout.paddingLayout(4)
+        ).withName("CK_SLOT_INFO");
     }
 
     /**

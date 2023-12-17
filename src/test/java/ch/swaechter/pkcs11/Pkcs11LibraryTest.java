@@ -1,9 +1,6 @@
 package ch.swaechter.pkcs11;
 
 import ch.swaechter.pkcs11.headers.*;
-import ch.swaechter.pkcs11.templates.AlignedLinuxTemplate;
-import ch.swaechter.pkcs11.templates.PackedWindowsTemplate;
-import ch.swaechter.pkcs11.templates.Template;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -26,12 +23,8 @@ public class Pkcs11LibraryTest {
 
     @BeforeAll
     public static void initializePkcs11LowLevel() throws Pkcs11Exception {
-        // Create the template
-        Template template = Template.detectTemplate();
-        assertTrue(template instanceof PackedWindowsTemplate || template instanceof AlignedLinuxTemplate);
-
         // Create the client
-        pkcs11Library = new Pkcs11Library(Pkcs11Template.LIBRARY_NAME, template);
+        pkcs11Library = Pkcs11Library.detectPlatform(Pkcs11TestTemplate.LIBRARY_NAME);
 
         // Initialize the PKCS11 middleware
         pkcs11Library.C_Initialize();
@@ -173,11 +166,11 @@ public class Pkcs11LibraryTest {
         assertTrue(sessionId > 0);
 
         // Login and logout as user
-        pkcs11Library.C_Login(sessionId, CkUserType.CKU_USER, Pkcs11Template.PKCS11_TOKEN_PIN);
+        pkcs11Library.C_Login(sessionId, CkUserType.CKU_USER, Pkcs11TestTemplate.PKCS11_TOKEN_PIN);
         pkcs11Library.C_Logout(sessionId);
 
         // Login and logout as security officer
-        pkcs11Library.C_Login(sessionId, CkUserType.CKU_SO, Pkcs11Template.PKCS11_TOKEN_SO_PIN);
+        pkcs11Library.C_Login(sessionId, CkUserType.CKU_SO, Pkcs11TestTemplate.PKCS11_TOKEN_SO_PIN);
         pkcs11Library.C_Logout(sessionId);
 
         // Try to log in via protected authentication path
@@ -199,7 +192,7 @@ public class Pkcs11LibraryTest {
         long sessionId = pkcs11Library.C_OpenSession(slotId, sessionInfoFlags);
 
         // Login as user
-        pkcs11Library.C_Login(sessionId, CkUserType.CKU_USER, Pkcs11Template.PKCS11_TOKEN_PIN);
+        pkcs11Library.C_Login(sessionId, CkUserType.CKU_USER, Pkcs11TestTemplate.PKCS11_TOKEN_PIN);
 
         // Define the private key find object template
         List<CkAttributeValue> ckAttributeSearchTemplate = new ArrayList<>();
@@ -273,7 +266,7 @@ public class Pkcs11LibraryTest {
         long sessionId = pkcs11Library.C_OpenSession(slotId, sessionInfoFlags);
 
         // Login as user
-        pkcs11Library.C_Login(sessionId, CkUserType.CKU_USER, Pkcs11Template.PKCS11_TOKEN_PIN);
+        pkcs11Library.C_Login(sessionId, CkUserType.CKU_USER, Pkcs11TestTemplate.PKCS11_TOKEN_PIN);
 
         // Digest a single block via single-part digest operation
         pkcs11Library.C_DigestInit(sessionId, CkMechanism.CKM_SHA256);
@@ -317,7 +310,7 @@ public class Pkcs11LibraryTest {
         long sessionId = pkcs11Library.C_OpenSession(slotId, sessionInfoFlags);
 
         // Login as user
-        pkcs11Library.C_Login(sessionId, CkUserType.CKU_USER, Pkcs11Template.PKCS11_TOKEN_PIN);
+        pkcs11Library.C_Login(sessionId, CkUserType.CKU_USER, Pkcs11TestTemplate.PKCS11_TOKEN_PIN);
 
         // Define the private key find object template
         List<CkAttributeValue> ckAttributeSearchTemplate = new ArrayList<>();
