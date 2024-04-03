@@ -35,7 +35,7 @@ The following resources were used:
 This project is licensed under the MIT license:
 
 ```
-Copyright (c) 2023 Simon Wächter
+Copyright (c) 2023 - 2024 Simon Wächter
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
