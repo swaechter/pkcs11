@@ -1,10 +1,10 @@
 # Build system
-/.gradle/
-/build/
+.gradle/
+build/
 
 # IDE from JetBrains
-/.idea/
-/*.iml
+.idea/
+*.iml
 
 # Signed PDF files
-/src/test/resources/Document_Signed.pdf
+/pkcs11-library/src/test/resources/Document_Signed.pdf
