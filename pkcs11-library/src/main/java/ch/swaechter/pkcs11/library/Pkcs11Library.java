@@ -23,6 +23,15 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 public abstract class Pkcs11Library extends Pkcs11Template {
 
     /**
+     * Get the version of the Java PKCS11 library - not the middleware.
+     *
+     * @return Version of the Java PKCS11 library
+     */
+    public static String getVersion() {
+        return "0.0.1";
+    }
+
+    /**
      * @param libraryName Name of the PKCS11 middleware that has to be on the library path
      * @return Loaded, but un-initialized PKCS11 library
      * @throws Pkcs11Exception Thrown if the PKCS11 middleware can't be loaded

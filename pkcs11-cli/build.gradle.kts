@@ -14,7 +14,7 @@ tasks {
         archiveBaseName.set("pkcs11-cli")
         mergeServiceFiles()
         manifest {
-            attributes(mapOf("Main-Class" to "ch.swaechter.pkcs11.cli.Application"))
+            attributes(mapOf("Main-Class" to "ch.swaechter.pkcs11.cli.Pkcs11Application"))
         }
     }
 
