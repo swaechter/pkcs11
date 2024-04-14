@@ -3,6 +3,7 @@ package ch.swaechter.pkcs11.cli;
 import ch.swaechter.pkcs11.library.Pkcs11Library;
 import ch.swaechter.pkcs11.library.objects.Pkcs11Slot;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 
@@ -136,11 +137,28 @@ public class Pkcs11Application {
     }
 
     private static void handleSignPdf(Pkcs11Service pkcs11Service, String[] parameters) throws Exception {
-        System.out.println("handleSignPdf");
+        // Check the arguments
+        if (parameters.length != 4) {
+            throw new Exception("Usage: pkcs11-cli --sign-pdf <SLOT_ID> <PIN> <INPUT_PDF_FILE> <OUTPUT_PDF_FILE>");
+        }
+        long slotId = Long.parseLong(parameters[0]);
+        String pin = parameters[1];
+        File inputFile = new File(parameters[2]);
+        File outputFile = new File(parameters[3]);
+
+        // Sign the PDF file
+        pkcs11Service.signPdfFile(slotId, pin, inputFile, outputFile);
     }
 
     private static void handleVerifyPdf(Pkcs11Service pkcs11Service, String[] parameters) throws Exception {
-        System.out.println("handleVerifyPdf");
+        // Check the arguments
+        if (parameters.length != 1) {
+            throw new Exception("Usage: pkcs11-cli --verify-pdf <PDF_FILE>");
+        }
+        File file = new File(parameters[0]);
+
+        // Verify the PDF file
+        pkcs11Service.verifyPdfFile(file);
     }
 
     private static void handleHelp() {

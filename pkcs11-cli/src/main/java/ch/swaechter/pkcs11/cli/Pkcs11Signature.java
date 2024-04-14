@@ -1,4 +1,4 @@
-package ch.swaechter.pkcs11.library.pdf;
+package ch.swaechter.pkcs11.cli;
 
 import ch.swaechter.pkcs11.library.Pkcs11Exception;
 import ch.swaechter.pkcs11.library.Pkcs11Library;
@@ -52,11 +52,11 @@ public class Pkcs11Signature implements IExternalSignature {
 
         // Ensure there is exactly one private key
         if (objectHandles.size() != 1) {
-            throw new Pkcs11Exception("For signing, exactly 1 private key is required. Found: " + objectHandles.size());
+            throw new Pkcs11Exception(STR."For signing, exactly 1 private key is required. Found: \{objectHandles.size()}");
         }
 
         // Return the object ID
-        return objectHandles.get(0);
+        return objectHandles.getFirst();
     }
 
     private Certificate[] getPublicCertificates() throws Pkcs11Exception {
@@ -67,7 +67,7 @@ public class Pkcs11Signature implements IExternalSignature {
 
         // Ensure there are at least three certificates
         if (objectHandles.size() < 3) {
-            throw new Pkcs11Exception("At least 3 certificates are required for signing. Found: " + objectHandles.size());
+            throw new Pkcs11Exception(STR."At least 3 certificates are required for signing. Found: \{objectHandles.size()}");
         }
 
         // Get the value of each certificate
@@ -78,7 +78,7 @@ public class Pkcs11Signature implements IExternalSignature {
 
             // Get the certificate value
             List<byte[]> attributeValues = pkcs11Session.getAttributeValue(objectHandle, List.of(CkAttribute.CKA_VALUE));
-            byte[] value = attributeValues.get(0);
+            byte[] value = attributeValues.getFirst();
 
             // Convert and add the certificate
             X509Certificate certificate = parseCertificate(value);
@@ -95,7 +95,7 @@ public class Pkcs11Signature implements IExternalSignature {
             CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
             return (X509Certificate) certificateFactory.generateCertificate(new BufferedInputStream(byteArrayInputStream));
         } catch (Exception ex) {
-            throw new Pkcs11Exception("Unable to convert certificate: " + ex.getMessage(), ex);
+            throw new Pkcs11Exception(STR."Unable to convert certificate: \{ex.getMessage()}", ex);
         }
     }
 
@@ -126,7 +126,7 @@ public class Pkcs11Signature implements IExternalSignature {
             pkcs11Library.C_SignInit(pkcs11Session.getSessionId(), CkMechanism.CKM_SHA256_RSA_PKCS, privateKeyObjectId);
             return pkcs11Library.C_Sign(pkcs11Session.getSessionId(), message, 8000);
         } catch (Exception exception) {
-            throw new GeneralSecurityException("Unable to sign: " + exception.getMessage(), exception);
+            throw new GeneralSecurityException(STR."Unable to sign: \{exception.getMessage()}", exception);
         }
     }
 }

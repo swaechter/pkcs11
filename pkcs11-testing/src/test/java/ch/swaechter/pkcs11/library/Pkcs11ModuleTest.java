@@ -1,5 +1,6 @@
 package ch.swaechter.pkcs11.library;
 
+import ch.swaechter.pkcs11.Pkcs11TestTemplate;
 import ch.swaechter.pkcs11.library.headers.*;
 import ch.swaechter.pkcs11.library.objects.*;
 import org.junit.jupiter.api.Test;
@@ -87,14 +88,14 @@ public class Pkcs11ModuleTest {
                     assertEquals("Secacon Gygli Engineering GmbH", pkcs11TokenInfo.getLabel());
                     assertEquals("SafeNet, Inc.", pkcs11TokenInfo.getManufacturerId());
                     assertEquals("eToken", pkcs11TokenInfo.getModel());
-                    assertEquals("02aea1d3", pkcs11TokenInfo.getSerialNumber());
+                    assertEquals("02c84d59", pkcs11TokenInfo.getSerialNumber());
                     assertEquals(1549, pkcs11TokenInfo.getFlags());
                     assertEquals(0, pkcs11TokenInfo.getMaxSessionCount());
                     assertEquals(0, pkcs11TokenInfo.getSessionCount());
                     assertEquals(0, pkcs11TokenInfo.getMaxRwSessionCount());
                     assertEquals(0, pkcs11TokenInfo.getRwSessionCount());
                     assertEquals(20, pkcs11TokenInfo.getMaxPinLen());
-                    assertEquals(6, pkcs11TokenInfo.getMinPinLen());
+                    assertEquals(8, pkcs11TokenInfo.getMinPinLen());
                     assertEquals(81920, pkcs11TokenInfo.getTotalPublicMemory());
                     assertEquals(32767, pkcs11TokenInfo.getFreePublicMemory());
                     assertEquals(81920, pkcs11TokenInfo.getTotalPrivateMemory());
@@ -200,7 +201,7 @@ public class Pkcs11ModuleTest {
                 for (long certificateObjectId : certificateObjectIds) {
                     List<byte[]> attributeValues = pkcs11Session.getAttributeValue(certificateObjectId, List.of(CkAttribute.CKA_VALUE));
                     assertEquals(1, attributeValues.size());
-                    byte[] attributeValue = attributeValues.get(0);
+                    byte[] attributeValue = attributeValues.getFirst();
                     assertTrue(attributeValue.length >= 1380 && attributeValue.length <= 1852);
                 }
 
@@ -220,7 +221,7 @@ public class Pkcs11ModuleTest {
             // Get all slots
             List<Pkcs11Slot> pkcs11Slots = pkcs11Module.getSlots(true);
             assertEquals(1, pkcs11Slots.size());
-            Pkcs11Slot pkcs11Slot = pkcs11Slots.get(0);
+            Pkcs11Slot pkcs11Slot = pkcs11Slots.getFirst();
 
             // Open a session
             try (Pkcs11Session pkcs11Session = pkcs11Slot.getToken().openSession(true, true)) {

@@ -1,5 +1,6 @@
 package ch.swaechter.pkcs11.library;
 
+import ch.swaechter.pkcs11.Pkcs11TestTemplate;
 import ch.swaechter.pkcs11.library.headers.*;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
@@ -61,7 +62,7 @@ public class Pkcs11LibraryTest {
         // Get the slot list
         List<Long> slotIds = pkcs11Library.C_GetSlotList(true);
         assertEquals(1, slotIds.size());
-        assertEquals(0, slotIds.get(0));
+        assertEquals(0, slotIds.getFirst());
     }
 
     @Test
@@ -69,7 +70,7 @@ public class Pkcs11LibraryTest {
         // Get the slot list
         List<Long> slotIds = pkcs11Library.C_GetSlotList(true);
         assertEquals(1, slotIds.size());
-        assertEquals(0, slotIds.get(0));
+        assertEquals(0, slotIds.getFirst());
 
         // Check all slots
         for (Long slotId : slotIds) {
@@ -97,7 +98,7 @@ public class Pkcs11LibraryTest {
         // Get the slot list
         List<Long> slotIds = pkcs11Library.C_GetSlotList(true);
         assertEquals(1, slotIds.size());
-        assertEquals(0, slotIds.get(0));
+        assertEquals(0, slotIds.getFirst());
 
         // Check all slots
         for (Long slotId : slotIds) {
@@ -109,14 +110,14 @@ public class Pkcs11LibraryTest {
             assertEquals("Secacon Gygli Engineering GmbH  ", ckTokenInfo.label());
             assertEquals("SafeNet, Inc.                   ", ckTokenInfo.manufacturerId());
             assertEquals("eToken          ", ckTokenInfo.model());
-            assertEquals("02aea1d3        ", ckTokenInfo.serialNumber());
+            assertEquals("02c84d59        ", ckTokenInfo.serialNumber());
             assertEquals(1549, ckTokenInfo.flags());
             assertEquals(0, ckTokenInfo.maxSessionCount());
             assertEquals(0, ckTokenInfo.sessionCount());
             assertEquals(0, ckTokenInfo.maxRwSessionCount());
             assertEquals(0, ckTokenInfo.rwSessionCount());
             assertEquals(20, ckTokenInfo.maxPinLen());
-            assertEquals(6, ckTokenInfo.minPinLen());
+            assertEquals(8, ckTokenInfo.minPinLen());
             assertEquals(81920, ckTokenInfo.totalPublicMemory());
             assertEquals(32767, ckTokenInfo.freePublicMemory());
             assertEquals(81920, ckTokenInfo.totalPrivateMemory());
@@ -146,7 +147,7 @@ public class Pkcs11LibraryTest {
         // Get the session information
         CkSessionInfo ckSessionInfo = pkcs11Library.C_GetSessionInfo(sessionId);
         assertEquals(slotId, ckSessionInfo.slotId());
-        Assertions.assertEquals(CkSessionState.CKS_RW_PUBLIC_SESSION, ckSessionInfo.state());
+        assertEquals(CkSessionState.CKS_RW_PUBLIC_SESSION, ckSessionInfo.state());
         assertEquals(6, ckSessionInfo.flags());
         assertEquals(0, ckSessionInfo.deviceError());
 
@@ -176,7 +177,7 @@ public class Pkcs11LibraryTest {
         pkcs11Library.C_Logout(sessionId);
 
         // Try to log in via protected authentication path
-        Pkcs11Exception pkcs11Exception = assertThrows(Pkcs11Exception.class, () -> pkcs11Library.C_Login(sessionId, CkUserType.CKU_SO, null));
+        Pkcs11Exception pkcs11Exception = Assertions.assertThrows(Pkcs11Exception.class, () -> pkcs11Library.C_Login(sessionId, CkUserType.CKU_SO, null));
         assertTrue(pkcs11Exception.getMessage().contains("C_Login failed"));
 
         // Close the session
@@ -239,8 +240,8 @@ public class Pkcs11LibraryTest {
         assertTrue(objectHandles.contains(43450373L) || objectHandles.contains(206635013L));
 
         // Get the object size
-        long objectSize = pkcs11Library.C_GetObjectSize(sessionId, objectHandles.get(0));
-        assertEquals(62, objectSize);
+        long objectSize = pkcs11Library.C_GetObjectSize(sessionId, objectHandles.getFirst());
+        assertEquals(54, objectSize);
 
         // Finalize the object search
         pkcs11Library.C_FindObjectsFinal(sessionId);
@@ -273,7 +274,7 @@ public class Pkcs11LibraryTest {
         for (long objectHandle : objectHandles) {
             List<byte[]> attributeValues = pkcs11Library.C_GetAttributeValue(sessionId, objectHandle, List.of(CkAttribute.CKA_VALUE));
             assertEquals(1, attributeValues.size());
-            byte[] attributeValue = attributeValues.get(0);
+            byte[] attributeValue = attributeValues.getFirst();
             assertTrue(attributeValue.length >= 1380 && attributeValue.length <= 1852);
         }
 
@@ -355,7 +356,7 @@ public class Pkcs11LibraryTest {
         List<Long> objectHandles = pkcs11Library.C_FindObjects(sessionId, maxObjects);
         assertEquals(1, objectHandles.size());
         assertTrue(objectHandles.contains(43450373L) || objectHandles.contains(206635013L));
-        long keyHandleId = objectHandles.get(0);
+        long keyHandleId = objectHandles.getFirst();
 
         // Finalize the object search
         pkcs11Library.C_FindObjectsFinal(sessionId);

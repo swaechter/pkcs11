@@ -2,6 +2,7 @@ rootProject.name = "pkcs11"
 
 include("pkcs11-cli")
 include("pkcs11-library")
+include("pkcs11-testing")
 
 dependencyResolutionManagement {
     versionCatalogs {

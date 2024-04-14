@@ -7,7 +7,17 @@ import ch.swaechter.pkcs11.library.objects.Pkcs11Session;
 import ch.swaechter.pkcs11.library.objects.Pkcs11Slot;
 import ch.swaechter.pkcs11.library.objects.Pkcs11Token;
 import ch.swaechter.pkcs11.library.objects.Pkcs11TokenInfo;
+import com.itextpdf.forms.fields.properties.SignedAppearanceText;
+import com.itextpdf.forms.form.element.SignatureFieldAppearance;
+import com.itextpdf.kernel.geom.Rectangle;
+import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfReader;
+import com.itextpdf.kernel.pdf.StampingProperties;
+import com.itextpdf.signatures.*;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
@@ -99,6 +109,82 @@ public class Pkcs11Service implements AutoCloseable {
             pkcs11Session.initPin(newPin);
         } catch (IOException exception) {
             throw new Pkcs11Exception(STR."Unable to unlock: \{exception.getMessage()}", exception);
+        }
+    }
+
+    public void signPdfFile(long slotId, String pin, File inputFile, File outputFile) throws Pkcs11Exception {
+        // Check the input file
+        if (!inputFile.isFile()) {
+            throw new Pkcs11Exception(STR."The input file \{inputFile.getAbsolutePath()} does not exist/is not a file.");
+        }
+
+        // Get the slot and token
+        Pkcs11Slot pkcs11Slot = getPkcs11Slot(slotId);
+        Pkcs11Token pkcs11Token = pkcs11Slot.getToken();
+
+        // Open a session
+        try (Pkcs11Session pkcs11Session = pkcs11Token.openSession(true, true)) {
+            // Login
+            pkcs11Session.loginUser(CkUserType.CKU_USER, pin);
+
+            // Create the PKCS11 signature
+            Pkcs11Signature pkcs11Signature = new Pkcs11Signature(pkcs11Session);
+
+            // Create the PDF reader and signer
+            StampingProperties stampingProperties = new StampingProperties();
+            PdfReader pdfReader = new PdfReader(inputFile);
+            PdfSigner pdfSigner = new PdfSigner(pdfReader, new FileOutputStream(outputFile), stampingProperties);
+
+            // Define the visual signature description
+            SignedAppearanceText signedAppearanceText = new SignedAppearanceText().setReasonLine("PKCS11 Test").setLocationLine("Basel").setSignedBy("Simon Wächter");
+            SignatureFieldAppearance signatureFieldAppearance = new SignatureFieldAppearance("signature1").setContent(signedAppearanceText);
+
+            // Set the signature information
+            pdfSigner.setPageRect(new Rectangle(40, 650, 250, 100));
+            pdfSigner.setSignatureAppearance(signatureFieldAppearance);
+            pdfSigner.setPageNumber(1);
+
+            // Sign the document
+            IExternalDigest digest = new BouncyCastleDigest();
+            pdfSigner.signDetached(digest, pkcs11Signature, pkcs11Signature.getChain(), null, null, null, 0, PdfSigner.CryptoStandard.CMS);
+
+            // Logout
+            pkcs11Session.logoutUser();
+        } catch (Exception exception) {
+            throw new Pkcs11Exception(STR."Unable to sign PDF file \{exception.getMessage()}", exception);
+        }
+    }
+
+    public void verifyPdfFile(File file) throws Pkcs11Exception {
+        // Check the file
+        if (!file.isFile()) {
+            throw new Pkcs11Exception(STR."The file \{file.getAbsolutePath()} does not exist/is not a file.");
+        }
+
+        // Verify the signed PDF document
+        try (
+            PdfReader pdfReader = new PdfReader(new FileInputStream(file));
+            PdfDocument pdfDocument = new PdfDocument(pdfReader)
+        ) {
+            // Create the signature utils and get all signature names
+            SignatureUtil signatureUtil = new SignatureUtil(pdfDocument);
+            List<String> signatureNames = signatureUtil.getSignatureNames();
+
+            // Check all signatures
+            for (String signatureName : signatureNames) {
+                // Read the signature
+                PdfPKCS7 pdfPkcs7 = signatureUtil.readSignatureData(signatureName);
+
+                // Check the signature
+                if (!signatureUtil.signatureCoversWholeDocument(signatureName)) {
+                    throw new Pkcs11Exception(STR."Signature \{signatureName} does not cover the full document.");
+                }
+                if (!pdfPkcs7.verifySignatureIntegrityAndAuthenticity()) {
+                    throw new Pkcs11Exception(STR."Signature \{signatureName} is not valid.");
+                }
+            }
+        } catch (Exception exception) {
+            throw new Pkcs11Exception(STR."Unable to verify PDF or verification failed: \{exception.getMessage()}", exception);
         }
     }
 

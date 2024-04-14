@@ -7,4 +7,4 @@ build/
 *.iml
 
 # Signed PDF files
-/pkcs11-library/src/test/resources/Document_Signed.pdf
+/pkcs11-testing/src/test/resources/Document_Signed.pdf

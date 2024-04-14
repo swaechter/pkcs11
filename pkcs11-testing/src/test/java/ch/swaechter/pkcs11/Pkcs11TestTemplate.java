@@ -1,4 +1,4 @@
-package ch.swaechter.pkcs11.library;
+package ch.swaechter.pkcs11;
 
 /**
  * A test template to represent a PKCS11 device. Each tester might change some values to represent his device. This
@@ -16,12 +16,17 @@ public class Pkcs11TestTemplate {
     /**
      * Security officer PIN of the PKCS11 device.
      */
-    public static final String PKCS11_TOKEN_SO_PIN = "2931506555";
+    public static final String PKCS11_TOKEN_SO_PIN = "CHANGE_ME";
 
     /**
      * User PIN of the PKCS11 device.
      */
-    public static final String PKCS11_TOKEN_PIN = "29332903";
+    public static final String PKCS11_TOKEN_PIN = "CHANGE_ME";
+
+    /**
+     * ID of the PKCS11 slot.
+     */
+    public static final long PKCS_SLOT_ID = 0;
 
     /**
      * Private constructor
