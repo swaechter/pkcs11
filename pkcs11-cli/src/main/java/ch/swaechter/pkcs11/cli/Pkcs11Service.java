@@ -78,7 +78,8 @@ public class Pkcs11Service implements AutoCloseable {
             // Login
             pkcs11Session.loginUser(CkUserType.CKU_USER, currentPin);
 
-            // TODO: Change PIN
+            // Change the PIN
+            pkcs11Session.changePin(currentPin, newPin);
         } catch (IOException exception) {
             throw new Pkcs11Exception(STR."Unable to login: \{exception.getMessage()}", exception);
         }
@@ -94,7 +95,8 @@ public class Pkcs11Service implements AutoCloseable {
             // Login
             pkcs11Session.loginUser(CkUserType.CKU_SO, soPin);
 
-            // TODO: Unlock PIN
+            // Init the PIN
+            pkcs11Session.initPin(newPin);
         } catch (IOException exception) {
             throw new Pkcs11Exception(STR."Unable to unlock: \{exception.getMessage()}", exception);
         }

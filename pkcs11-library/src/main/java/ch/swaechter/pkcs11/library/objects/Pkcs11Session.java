@@ -82,6 +82,27 @@ public class Pkcs11Session extends Pkcs11Container implements Closeable {
     }
 
     /**
+     * Initializes the normal user’s PIN.
+     *
+     * @param newPin New PIN or null for protected authentication path
+     * @throws Pkcs11Exception Thrown if the session does not exist or the PIN can't be set
+     */
+    public void initPin(String newPin) throws Pkcs11Exception {
+        getPkcs11Library().C_InitPIN(sessionId, newPin);
+    }
+
+    /**
+     * Modifies the PIN of the current user.
+     *
+     * @param currentPin Current PIN or null for protected authentication path
+     * @param newPin     New PIN or null for protected authentication path
+     * @throws Pkcs11Exception Thrown if the session does not exist or the PIN can't be changed
+     */
+    public void changePin(String currentPin, String newPin) throws Pkcs11Exception {
+        getPkcs11Library().C_SetPIN(sessionId, currentPin, newPin);
+    }
+
+    /**
      * Find all objects for the given search template.
      *
      * @param searchTemplate Search template

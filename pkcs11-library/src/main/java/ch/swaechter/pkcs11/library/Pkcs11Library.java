@@ -355,6 +355,56 @@ public abstract class Pkcs11Library extends Pkcs11Template {
     }
 
     /**
+     * Initializes the normal user’s PIN.
+     *
+     * @param sessionId ID of the session
+     * @param newPin    New PIN or null for protected authentication path
+     * @throws Pkcs11Exception Thrown if the session does not exist or the PIN can't be changed
+     */
+    public void C_InitPIN(long sessionId, String newPin) throws Pkcs11Exception {
+        try (Arena arena = Arena.ofConfined()) {
+            // Convert the new PIN or use null for a token with a protected authentication path
+            MemorySegment newPinMemorySegment = newPin != null ? arena.allocateArray(ValueLayout.JAVA_BYTE, newPin.getBytes(StandardCharsets.US_ASCII)) : MemorySegment.NULL;
+
+            // Invoke the function
+            FunctionDescriptor functionDescriptor = FunctionDescriptor.of(JAVA_INT, JAVA_INT, ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)), JAVA_INT);
+            MethodHandle methodHandle = downCallHandle("C_InitPIN", functionDescriptor);
+            CkResult ckResult = CkResult.valueOf((int) methodHandle.invokeExact((int) sessionId, newPinMemorySegment, (int) newPinMemorySegment.byteSize()));
+            if (ckResult != CkResult.CKR_OK) {
+                throw new Pkcs11Exception("C_InitPIN failed", ckResult);
+            }
+        } catch (Throwable throwable) {
+            throw new Pkcs11Exception("C_InitPIN failed: " + throwable.getMessage(), throwable);
+        }
+    }
+
+    /**
+     * Modifies the PIN of the current user.
+     *
+     * @param sessionId  ID of the session
+     * @param currentPin Current PIN or null for protected authentication path
+     * @param newPin     New PIN or null for protected authentication path
+     * @throws Pkcs11Exception Thrown if the session does not exist or the PIN can't be changed
+     */
+    public void C_SetPIN(long sessionId, String currentPin, String newPin) throws Pkcs11Exception {
+        try (Arena arena = Arena.ofConfined()) {
+            // Convert the current/new PIN or use null for a token with a protected authentication path
+            MemorySegment currentPinMemorySegment = currentPin != null ? arena.allocateArray(ValueLayout.JAVA_BYTE, currentPin.getBytes(StandardCharsets.US_ASCII)) : MemorySegment.NULL;
+            MemorySegment newPinMemorySegment = newPin != null ? arena.allocateArray(ValueLayout.JAVA_BYTE, newPin.getBytes(StandardCharsets.US_ASCII)) : MemorySegment.NULL;
+
+            // Invoke the function
+            FunctionDescriptor functionDescriptor = FunctionDescriptor.of(JAVA_INT, JAVA_INT, ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)), JAVA_INT, ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)), JAVA_INT);
+            MethodHandle methodHandle = downCallHandle("C_SetPIN", functionDescriptor);
+            CkResult ckResult = CkResult.valueOf((int) methodHandle.invokeExact((int) sessionId, currentPinMemorySegment, (int) currentPinMemorySegment.byteSize(), newPinMemorySegment, (int) newPinMemorySegment.byteSize()));
+            if (ckResult != CkResult.CKR_OK) {
+                throw new Pkcs11Exception("C_SetPIN failed", ckResult);
+            }
+        } catch (Throwable throwable) {
+            throw new Pkcs11Exception("C_SetPIN failed: " + throwable.getMessage(), throwable);
+        }
+    }
+
+    /**
      * Opens a connection between an application and a particular token or sets up an application callback for token insertion.
      *
      * @param slotId ID of the slot
