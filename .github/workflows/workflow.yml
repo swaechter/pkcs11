@@ -1,0 +1,17 @@
+name: PKCS11 workflow
+on: [push]
+jobs:
+    PKCS11-Workflow:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Clone the repository
+              uses: actions/checkout@v4
+            - name: Setup Java
+              uses: actions/setup-java@v4
+              with:
+                  java-version: '21'
+                  distribution: 'temurin'
+            - name: Setup Gradle
+              uses: gradle/actions/setup-gradle@v3
+            - name: Build the project
+              run: ./gradlew build -x test
