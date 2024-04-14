@@ -26,6 +26,7 @@ public class Pkcs11LibraryTest {
     public static void initializePkcs11LowLevel() throws Pkcs11Exception {
         // Create the client
         pkcs11Library = Pkcs11Library.detectPlatform(Pkcs11TestTemplate.LIBRARY_NAME);
+        //pkcs11Library = Pkcs11Library.detectPlatform("softhsm2-x64");
 
         // Initialize the PKCS11 middleware
         pkcs11Library.C_Initialize();
@@ -177,6 +178,36 @@ public class Pkcs11LibraryTest {
         // Try to log in via protected authentication path
         Pkcs11Exception pkcs11Exception = assertThrows(Pkcs11Exception.class, () -> pkcs11Library.C_Login(sessionId, CkUserType.CKU_SO, null));
         assertTrue(pkcs11Exception.getMessage().contains("C_Login failed"));
+
+        // Close the session
+        pkcs11Library.C_CloseSession(sessionId);
+    }
+
+
+    @Test
+    public void testPinChangeAndUnlock() throws Pkcs11Exception {
+        // Define the values
+        long slotId = 0;
+        long sessionInfoFlags = CkSessionInfoFlag.CKF_RW_SESSION.value | CkSessionInfoFlag.CKF_SERIAL_SESSION.value;
+        String newPin = "11992288";
+
+        // Open a new session
+        long sessionId = pkcs11Library.C_OpenSession(slotId, sessionInfoFlags);
+        assertTrue(sessionId > 0);
+
+        // Login as user and change the user PIN
+        pkcs11Library.C_Login(sessionId, CkUserType.CKU_USER, Pkcs11TestTemplate.PKCS11_TOKEN_PIN);
+        pkcs11Library.C_SetPIN(sessionId, Pkcs11TestTemplate.PKCS11_TOKEN_PIN, newPin);
+        pkcs11Library.C_Logout(sessionId);
+
+        // Test the PIN
+        pkcs11Library.C_Login(sessionId, CkUserType.CKU_USER, newPin);
+        pkcs11Library.C_Logout(sessionId);
+
+        // Login as SO and (re-)set a new user PIN
+        pkcs11Library.C_Login(sessionId, CkUserType.CKU_SO, Pkcs11TestTemplate.PKCS11_TOKEN_SO_PIN);
+        pkcs11Library.C_InitPIN(sessionId, Pkcs11TestTemplate.PKCS11_TOKEN_PIN);
+        pkcs11Library.C_Logout(sessionId);
 
         // Close the session
         pkcs11Library.C_CloseSession(sessionId);
