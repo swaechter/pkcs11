@@ -4,6 +4,8 @@ import ch.swaechter.pkcs11.library.Pkcs11Library;
 import ch.swaechter.pkcs11.library.objects.Pkcs11Slot;
 
 import java.io.File;
+import java.security.cert.X509Certificate;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 
@@ -133,13 +135,29 @@ public class Pkcs11Application {
     }
 
     private static void handleListCertificates(Pkcs11Service pkcs11Service, String[] parameters) throws Exception {
-        System.out.println("handleListCertificates");
+        // Check the arguments
+        if (parameters.length != 1) {
+            throw new Exception("Usage: pkcs11-cli --list-certificates <SLOT_ID>");
+        }
+        long slotId = Long.parseLong(parameters[0]);
+
+        // Get the certificates
+        List<X509Certificate> certificates = pkcs11Service.getCertificates(slotId);
+
+        // Print the certificates
+        for (X509Certificate certificate : certificates) {
+            String subject = certificate.getSubjectX500Principal().toString();
+            String issuer = certificate.getIssuerX500Principal().toString();
+            Instant fromDate = certificate.getNotBefore().toInstant();
+            Instant toDate = certificate.getNotAfter().toInstant();
+            System.out.println(STR."\{subject};\{issuer};\{fromDate};\{toDate}");
+        }
     }
 
     private static void handleSignPdf(Pkcs11Service pkcs11Service, String[] parameters) throws Exception {
         // Check the arguments
         if (parameters.length != 4) {
-            throw new Exception("Usage: pkcs11-cli --sign-pdf <SLOT_ID> <PIN> <INPUT_PDF_FILE> <OUTPUT_PDF_FILE>");
+            throw new Exception("Usage: pkcs11-cli --sign-pdf <SLOT_ID> <PIN> <INPUT_FILE> <OUTPUT_FILE>");
         }
         long slotId = Long.parseLong(parameters[0]);
         String pin = parameters[1];
@@ -153,7 +171,7 @@ public class Pkcs11Application {
     private static void handleVerifyPdf(Pkcs11Service pkcs11Service, String[] parameters) throws Exception {
         // Check the arguments
         if (parameters.length != 1) {
-            throw new Exception("Usage: pkcs11-cli --verify-pdf <PDF_FILE>");
+            throw new Exception("Usage: pkcs11-cli --verify-pdf <FILE>");
         }
         File file = new File(parameters[0]);
 
@@ -164,14 +182,14 @@ public class Pkcs11Application {
     private static void handleHelp() {
         System.out.println("===== Available commands =====");
         System.out.println("--list-slots");
-        System.out.println("--is-locked SLOT_ID");
-        System.out.println("--is-so-locked SLOT_ID");
-        System.out.println("--login SLOT_ID USERNAME PASSWORD");
-        System.out.println("--change-pin SLOT_ID CURRENT_PIN NEW_PIN");
-        System.out.println("--unlock SLOT_ID USERNAME PASSWORD");
-        System.out.println("--list-certificates SLOT_ID");
-        System.out.println("--sign-pdf SLOT_ID USERNAME PASSWORD INPUT_FILE OUTPUT_FILE");
-        System.out.println("--verify-pdf INPUT_FILE");
+        System.out.println("--is-locked <SLOT_ID>");
+        System.out.println("--is-so-locked <SLOT_ID>");
+        System.out.println("--login <SLOT_ID> <PIN>");
+        System.out.println("--change-pin <SLOT_ID> <CURRENT_PIN> <NEW_PIN>");
+        System.out.println("--unlock <SLOT_ID> <SO_PIN> <NEW_PIN>");
+        System.out.println("--list-certificates <SLOT_ID>");
+        System.out.println("--sign-pdf <SLOT_ID> <PIN> <INPUT_FILE> <OUTPUT_FILE>");
+        System.out.println("--verify-pdf <FILE>");
         System.out.println("--help");
         System.out.println("--version");
         System.out.println();

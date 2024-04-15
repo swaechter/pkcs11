@@ -2,6 +2,9 @@ package ch.swaechter.pkcs11.cli;
 
 import ch.swaechter.pkcs11.library.Pkcs11Exception;
 import ch.swaechter.pkcs11.library.Pkcs11Module;
+import ch.swaechter.pkcs11.library.headers.CkAttribute;
+import ch.swaechter.pkcs11.library.headers.CkAttributeValue;
+import ch.swaechter.pkcs11.library.headers.CkObjectClass;
 import ch.swaechter.pkcs11.library.headers.CkUserType;
 import ch.swaechter.pkcs11.library.objects.Pkcs11Session;
 import ch.swaechter.pkcs11.library.objects.Pkcs11Slot;
@@ -15,10 +18,10 @@ import com.itextpdf.kernel.pdf.PdfReader;
 import com.itextpdf.kernel.pdf.StampingProperties;
 import com.itextpdf.signatures.*;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -112,6 +115,45 @@ public class Pkcs11Service implements AutoCloseable {
         }
     }
 
+    public List<X509Certificate> getCertificates(long slotId) throws Pkcs11Exception {
+        // Get the slot and token
+        Pkcs11Slot pkcs11Slot = getPkcs11Slot(slotId);
+        Pkcs11Token pkcs11Token = pkcs11Slot.getToken();
+
+        // Open a session
+        try (Pkcs11Session pkcs11Session = pkcs11Token.openSession(true, true)) {
+            // Search the certificate handle ID
+            List<CkAttributeValue> ckAttributeSearchTemplate = new ArrayList<>();
+            ckAttributeSearchTemplate.add(new CkAttributeValue(CkAttribute.CKA_CLASS, CkObjectClass.CKO_CERTIFICATE.value));
+            List<Long> objectHandles = pkcs11Session.findObjects(ckAttributeSearchTemplate);
+
+            // Ensure there are at least three certificates
+            if (objectHandles.size() < 3) {
+                throw new Pkcs11Exception(STR."At least 3 certificates are required for signing. Found: \{objectHandles.size()}");
+            }
+
+            // Get the value of each certificate
+            List<X509Certificate> certificates = new ArrayList<>(objectHandles.size());
+            for (int i = 0; i < objectHandles.size(); i++) {
+                // Get the object handle
+                long objectHandle = objectHandles.get(i);
+
+                // Get the certificate value
+                List<byte[]> attributeValues = pkcs11Session.getAttributeValue(objectHandle, List.of(CkAttribute.CKA_VALUE));
+                byte[] value = attributeValues.getFirst();
+
+                // Convert and add the certificate
+                X509Certificate certificate = parseCertificate(value);
+                certificates.add(certificate);
+            }
+
+            // Return the certificates
+            return certificates;
+        } catch (IOException exception) {
+            throw new Pkcs11Exception(STR."Unable to list and parse certificates: \{exception.getMessage()}", exception);
+        }
+    }
+
     public void signPdfFile(long slotId, String pin, File inputFile, File outputFile) throws Pkcs11Exception {
         // Check the input file
         if (!inputFile.isFile()) {
@@ -191,5 +233,15 @@ public class Pkcs11Service implements AutoCloseable {
     @Override
     public void close() throws Exception {
         pkcs11Module.finalizeModule();
+    }
+
+    public static X509Certificate parseCertificate(byte[] certificateValue) throws Pkcs11Exception {
+        // Parse the certificate
+        try (ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(certificateValue)) {
+            CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
+            return (X509Certificate) certificateFactory.generateCertificate(new BufferedInputStream(byteArrayInputStream));
+        } catch (Exception ex) {
+            throw new Pkcs11Exception(STR."Unable to convert certificate: \{ex.getMessage()}", ex);
+        }
     }
 }

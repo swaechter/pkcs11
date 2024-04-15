@@ -11,11 +11,8 @@ import com.itextpdf.signatures.DigestAlgorithms;
 import com.itextpdf.signatures.IExternalSignature;
 import com.itextpdf.signatures.ISignatureMechanismParams;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
 import java.security.GeneralSecurityException;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
@@ -81,22 +78,12 @@ public class Pkcs11Signature implements IExternalSignature {
             byte[] value = attributeValues.getFirst();
 
             // Convert and add the certificate
-            X509Certificate certificate = parseCertificate(value);
+            X509Certificate certificate = Pkcs11Service.parseCertificate(value);
             certificates[i] = certificate;
         }
 
         // Return the certificates
         return certificates;
-    }
-
-    private X509Certificate parseCertificate(byte[] certificateValue) throws Pkcs11Exception {
-        // Parse the certificate
-        try (ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(certificateValue)) {
-            CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
-            return (X509Certificate) certificateFactory.generateCertificate(new BufferedInputStream(byteArrayInputStream));
-        } catch (Exception ex) {
-            throw new Pkcs11Exception(STR."Unable to convert certificate: \{ex.getMessage()}", ex);
-        }
     }
 
     public Certificate[] getChain() {
